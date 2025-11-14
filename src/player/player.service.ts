@@ -1,11 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import { Player } from './domain/player';
+import { Unit, UnitName } from 'src/units/domain/unit.types';
+import { UnitsService } from 'src/units/units.service';
 
 @Injectable()
 export class PlayerService {
 
     private players: Player[] = [];
     private idCounter = 1;
+    private unitService: UnitsService;
+
+    constructor(unitService: UnitsService) {
+        this.unitService = unitService;
+    }
 
     createPlayer(name: string, color: string): Player {
         const newPlayer: Player = {
@@ -18,7 +25,7 @@ export class PlayerService {
         return newPlayer;
     }
 
-    findall(): Player[] {
+    findAll(): Player[] {
         return this.players;
     }
 
@@ -41,6 +48,17 @@ export class PlayerService {
             player.name = name;
             player.color = color;
             return player;
+        }
+        return undefined;
+    }
+
+    addUnitToPlayer(playerId: Player['id'], unitIdStr: string): Unit | undefined {
+        const player = this.findById(playerId);
+        const unitId : UnitName = unitIdStr as UnitName;
+        if (player) {
+            const newUnit = this.unitService.createUnit(unitId);
+            player.units.push(newUnit);
+            return newUnit;
         }
         return undefined;
     }
