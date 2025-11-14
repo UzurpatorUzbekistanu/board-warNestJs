@@ -20,5 +20,9 @@ export class UnitsService {
         return units
     }
 
+    getAllAvailableUnits(): Unit[] {
+        return this.factory.getAllUnitTemplates();
+    }
+
 
 }

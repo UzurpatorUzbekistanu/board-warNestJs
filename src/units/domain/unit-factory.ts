@@ -22,4 +22,20 @@ export class UnitFactory {
     
     );
   }
+
+  getAllUnitTemplates(): GameUnit[] {
+    return Object.values(UNIT_TEMPLATES).map(template => 
+      new GameUnit(
+        template.name,
+        template.id,
+        template.maxHp,
+        template.meleeAttack,
+        template.rangedAttack,
+        template.attackRange,
+        template.defense,
+        template.speed,
+        template.cost,
+      )
+    );
+  }
 }

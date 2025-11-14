@@ -1,6 +1,6 @@
-import { Controller, Param, Post } from '@nestjs/common';
+import { Controller, Get, Param, Post } from '@nestjs/common';
 import { CreateUnitDto } from './dto/create-unit-dto';
-import type { UnitName } from './domain/unit.types';
+import type { Unit, UnitName } from './domain/unit.types';
 import { UnitsService } from './units.service';
 import { GameUnit } from './domain/game-unit';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
@@ -9,13 +9,20 @@ import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 export class UnitsController {
     constructor(private readonly unitsService: UnitsService) {}
 
-    @Post('create:id')
+    @Post('create/:id')
     @ApiOperation({ summary: 'Create a new unit by its name like: line-infantry' })
     @ApiResponse({ status: 201, description: 'The unit has been successfully created.', type: CreateUnitDto })
-    createUnit(@Param('id') id: UnitName ): CreateUnitDto {
+    createUnit(@Param('id') id: UnitName ): Unit {
         
         const unit: GameUnit =this.unitsService.createUnit(id);
 
         return unit
+    }
+
+    @Get()
+    @ApiOperation({ summary: 'Get all available unit templates' })
+    @ApiResponse({ status: 200, description: 'List of all available unit templates.', type: [CreateUnitDto] })
+    getAllAvailableUnits(): Unit[] {
+        return this.unitsService.getAllAvailableUnits();
     }
 }
