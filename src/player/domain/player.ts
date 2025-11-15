@@ -5,6 +5,7 @@ export class Player {
     name: string;
     color: string;
     units: Unit[];
+    budget: number = 1000;
 
     constructor(id: number, name: string, color: string) {
         this.id = id;

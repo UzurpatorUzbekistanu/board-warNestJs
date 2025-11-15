@@ -17,7 +17,7 @@ export class PlayerController {
     @ApiOperation({ summary: 'Create a new player' })
     @ApiResponse({ status: 201, description: 'The player has been successfully created.' })
     createPlayer(@Body() createPlayerDto: CreatePlayerDto)  {
-        this.playerService.createPlayer(createPlayerDto.name, createPlayerDto.color);
+        return this.playerService.createPlayer(createPlayerDto.name, createPlayerDto.color);
     }
 
     @Get()
@@ -30,7 +30,7 @@ export class PlayerController {
     @Get(':id')
     @ApiOperation({ summary: 'Get player by ID' })
     @ApiResponse({ status: 200, description: 'The player with the specified ID.' })
-    getPlayerById(@Param('id') id: number) {
+    getPlayerById(@Param('id', ParseIntPipe) id: number ) {
         return this.playerService.findById(id);
     }
 
@@ -61,6 +61,18 @@ export class PlayerController {
         } else {
             throw new Error('Player not found');
         }   
+    }
+
+    @Get(':playerId/budget')
+    @ApiOperation({ summary: 'Get player budget by ID' })
+    @ApiResponse({ status: 200, description: 'The budget of the player with the specified ID.' })
+    getPlayerBudget(@Param('playerId', ParseIntPipe) playerId: number) {
+        const budget = this.playerService.getPlayerBudget(playerId);
+        if (budget !== undefined) {
+            return { budget };
+        } else {
+            throw new Error('Player not found');
+        }
     }
 
 }

@@ -8,11 +8,8 @@ export class PlayerService {
 
     private players: Player[] = [];
     private idCounter = 1;
-    private unitService: UnitsService;
 
-    constructor(unitService: UnitsService) {
-        this.unitService = unitService;
-    }
+    constructor(private readonly unitService: UnitsService) {}
 
     createPlayer(name: string, color: string): Player {
         const newPlayer: Player = {
@@ -20,6 +17,7 @@ export class PlayerService {
             name,
             color,
             units: [],
+            budget: 1000
         };
         this.players.push(newPlayer);
         return newPlayer;
@@ -52,15 +50,23 @@ export class PlayerService {
         return undefined;
     }
 
-    addUnitToPlayer(playerId: Player['id'], unitIdStr: string): Unit | undefined {
-        const player = this.findById(playerId);
-        const unitId : UnitName = unitIdStr as UnitName;
-        if (player) {
-            const newUnit = this.unitService.createUnit(unitId);
-            player.units.push(newUnit);
-            return newUnit;
-        }
+    addUnitToPlayer(playerId: Player['id'], unitIdStr: string): Player | undefined {
+    const player = this.findById(playerId);
+    const unitId: UnitName = unitIdStr as UnitName;
+
+    if (!player) {
         return undefined;
+    }
+
+    const newUnit = this.unitService.createUnit(unitId, player);
+    player.units.push(newUnit);
+
+    return player;
+    }
+
+    getPlayerBudget(playerId: Player['id']): number | undefined {
+        const player = this.findById(playerId);
+        return player ? player.budget : undefined;
     }
 
 }

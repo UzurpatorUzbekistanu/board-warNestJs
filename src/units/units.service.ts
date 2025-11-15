@@ -9,8 +9,12 @@ export class UnitsService {
     private customUnits: Unit[] = [];
     private readonly factory = new UnitFactory();
 
-    createUnit(id: UnitName): Unit {
+    createUnit(id: UnitName, player: Player): Unit {
         const newUnit = this.factory.createFromName(id);
+        player.budget -= newUnit.cost;
+        if (player.budget < 0) {
+            throw new Error('Insufficient budget to create this unit.');
+        }
         this.customUnits.push(newUnit);
         return newUnit;
     }
