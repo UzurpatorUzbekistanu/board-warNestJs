@@ -18,6 +18,11 @@ export class UnitsService {
         this.customUnits.push(newUnit);
         return newUnit;
     }
+    createUnitWithoutPlayer(id: UnitName): Unit {
+        const newUnit = this.factory.createFromName(id);
+        this.customUnits.push(newUnit);
+        return newUnit;
+    }
 
     getPlayerUnits(playerId: Player['id']): Unit[] {
         let units: Unit[] = [];

@@ -19,7 +19,7 @@ export class UnitFactory {
       template.defense,
       template.speed,
       template.cost,
-    
+      template.uniqueId
     );
   }
 
@@ -35,6 +35,7 @@ export class UnitFactory {
         template.defense,
         template.speed,
         template.cost,
+        template.uniqueId
       )
     );
   }

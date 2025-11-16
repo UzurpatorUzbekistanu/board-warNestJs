@@ -63,6 +63,20 @@ export class PlayerController {
         }   
     }
 
+    @Put(':playerId/units/:unitUniqueId')
+    @ApiOperation({ summary: 'Delete unit of player' })
+    @ApiResponse({ status: 200, description: 'The unit has been successfully deleted from the player.' })
+    deleteUnitFromPlayer(
+        @Param('playerId', ParseIntPipe) playerId: number, 
+        @Param('unitUniqueId', ParseIntPipe) unitUniqueId: number) {
+        const player = this.playerService.deleteUnitFromPlayer(playerId, unitUniqueId);
+        if (player) {
+            return player;
+        } else {
+            throw new Error('Player or Unit not found');
+        }
+    }
+
     @Get(':playerId/budget')
     @ApiOperation({ summary: 'Get player budget by ID' })
     @ApiResponse({ status: 200, description: 'The budget of the player with the specified ID.' })

@@ -4,6 +4,6 @@ export interface Board {
     tiles: HexTile[];
 }
 
-export class GameBoard implements Board {
+export default class GameBoard implements Board {
     constructor(public tiles: HexTile[]) {}
 }

@@ -1,6 +1,7 @@
 // src/board/data/board-definition.ts
 
-import { Board, HexTile, TerrainType } from '../domain/hex.types';
+import {HexTile, TerrainType } from '../domain/hex.types';
+import GameBoard from '../domain/board';
 
 const BOARD_WIDTH = 5;
 const BOARD_HEIGHT = 5;
@@ -54,6 +55,6 @@ for (let q = 0; q < BOARD_WIDTH; q++) {
   }
 }
 
-export const DEFAULT_BOARD: Board = {
+export const DEFAULT_BOARD: GameBoard = {
   tiles,
 };

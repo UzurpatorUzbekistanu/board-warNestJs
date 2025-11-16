@@ -14,7 +14,7 @@ export class UnitsController {
     @ApiResponse({ status: 201, description: 'The unit has been successfully created.', type: CreateUnitDto })
     createUnit(@Param('id') id: UnitName ): Unit {
         
-        const unit: GameUnit =this.unitsService.createUnit(id);
+        const unit: GameUnit =this.unitsService.createUnitWithoutPlayer(id);
 
         return unit
     }

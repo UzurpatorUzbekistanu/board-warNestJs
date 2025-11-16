@@ -64,6 +64,19 @@ export class PlayerService {
     return player;
     }
 
+    deleteUnitFromPlayer(playerId: Player['id'], uniqueId: number): Player | undefined {
+    const player = this.findById(playerId);
+    if (!player) {
+        return undefined;
+    }
+    const unitIndex = player.units.findIndex(unit => unit.uniqueId === uniqueId);
+    if (unitIndex !== -1) {
+        player.units.splice(unitIndex, 1);
+        return player;
+    }
+    return undefined;
+    }
+
     getPlayerBudget(playerId: Player['id']): number | undefined {
         const player = this.findById(playerId);
         return player ? player.budget : undefined;
