@@ -10,7 +10,6 @@ type UnitTemplate = {
     defense: number;
     speed: number;
     cost: number;
-    uniqueId: number;
 };
 
 export const UNIT_TEMPLATES: Record<UnitName, UnitTemplate> = {
@@ -24,7 +23,6 @@ export const UNIT_TEMPLATES: Record<UnitName, UnitTemplate> = {
     defense: 5,
     speed: 2,
     cost: 30,
-    uniqueId: 1,
   },
   'line-infantry': {
     id: 'line-infantry',
@@ -36,7 +34,6 @@ export const UNIT_TEMPLATES: Record<UnitName, UnitTemplate> = {
     defense: 10,
     speed: 2,
     cost: 45,
-    uniqueId: 1,
   },
     'guard-infantry': {
     id: 'guard-infantry',
@@ -48,7 +45,6 @@ export const UNIT_TEMPLATES: Record<UnitName, UnitTemplate> = {
     defense: 15,
     speed: 1,
     cost: 65,
-    uniqueId: 1,
     },
     'light-cavalry': {
     id: 'light-cavalry',
@@ -60,7 +56,6 @@ export const UNIT_TEMPLATES: Record<UnitName, UnitTemplate> = {
     defense: 8,
     speed: 4,
     cost: 50,
-    uniqueId: 1,
     },
     'dragon-cavalry': {
     id: 'dragon-cavalry',
@@ -72,7 +67,6 @@ export const UNIT_TEMPLATES: Record<UnitName, UnitTemplate> = {
     defense: 12,
     speed: 3,
     cost: 80,
-    uniqueId: 1,
     },
     'heavy-cavalry': {
     id: 'heavy-cavalry',
@@ -84,7 +78,6 @@ export const UNIT_TEMPLATES: Record<UnitName, UnitTemplate> = {
     defense: 20,
     speed: 2,
     cost: 120,
-    uniqueId: 1,
     },
     'twelve-pounder-cannon': {
     id: 'twelve-pounder-cannon',
@@ -96,7 +89,6 @@ export const UNIT_TEMPLATES: Record<UnitName, UnitTemplate> = {
     defense: 5,
     speed: 1,
     cost: 150,
-    uniqueId: 1,
     },
     'six-pounder-cannon': {
     id: 'six-pounder-cannon',
@@ -108,7 +100,6 @@ export const UNIT_TEMPLATES: Record<UnitName, UnitTemplate> = {
     defense: 3,
     speed: 1,
     cost: 100,
-    uniqueId: 1,
     },
     'howitzer-cannon': {
     id: 'howitzer-cannon',
@@ -120,6 +111,5 @@ export const UNIT_TEMPLATES: Record<UnitName, UnitTemplate> = {
     defense: 4,
     speed: 1,
     cost: 130,
-    uniqueId: 1,
     },
 };
