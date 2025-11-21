@@ -7,6 +7,7 @@ import { Unit } from 'src/units/domain/unit.types';
 import { UnitsService } from 'src/units/units.service';
 import { Player } from 'src/player/domain/player';
 import { Board } from 'src/board/domain/board';
+import { HexCoords } from 'src/board/domain/hex.types';
 
 @Injectable()
 export class GameService {
@@ -63,5 +64,38 @@ private createGame(
   return game
 }
 
+setUnitPosition(
+  gameId: number,
+  unitUniqueId: number,
+  coords: HexCoords,
+): Game | undefined {
 
+  const game: Game = this.findById(gameId);
+  const tile = game.board.tiles.find(t => t.coords.q === coords.q && t.coords.r === coords.r)
+  let unit = game.playerArmy.find(u => u.uniqueId === unitUniqueId);
+  if (!unit) {
+    unit = game.enemyArmy.find(u => u.uniqueId === unitUniqueId);
+  }
+  if (!unit) {
+    throw new Error('Unit not found');
+  }
+  unit.position = coords;
+
+  return game;
+
+}
+
+findById(gameId: number): Game {
+  const game: Game[] = this.games.filter(game => game.id === gameId);
+  return game[0]
+}
+
+ isOccupied(units: Unit[], coords: HexCoords): boolean {
+  return units.some(u =>
+    u.position?.q != null &&
+    u.position?.r != null &&
+    u.position.q === coords.q &&
+    u.position.r === coords.r
+  );
+}
 }

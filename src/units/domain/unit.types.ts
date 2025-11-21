@@ -1,3 +1,5 @@
+import { HexCoords } from "src/board/domain/hex.types";
+
 export interface Unit {
     name: string;
     id: UnitName;
@@ -9,7 +11,7 @@ export interface Unit {
     speed: number;
     cost: number;
     uniqueId: number;
-    position?: { x: number; y: number };
+    position: HexCoords | null;
     playerId?: string;
 }
 
