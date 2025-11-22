@@ -23,27 +23,20 @@ export function countRoad(positionHexTile: HexTile, targetHexTile: HexTile, boar
         positionHexTile.coords.r !== targetHexTile.coords.r
    ) {
     let direction: number[] = determineDirection(positionHexTile, targetHexTile, board)
-
-    
+    let newHexCoords: HexCoords = {
+      q: positionHexTile.coords.q + direction[0],
+      r: positionHexTile.coords.r + direction[1]
+    }
+    let newPosition: HexTile | undefined = board.tiles.find(tile => tile.coords == newHexCoords)
+    if (newPosition !== undefined) road.push(newPosition)
     movementCost =+ 1;
-    road.push
    }
-  
-  
-
 
 }
 
 function determineDirection(positionHexTile: HexTile, targetHexTile: HexTile, board: Board): number[]{
 
-  if (positionHexTile.coords.q - targetHexTile.coords.q < 0 ) {
-    let newCoords: HexCoords = {
-      q: positionHexTile.coords.q + 1,
-      r: positionHexTile.coords.r
-    }
-      if(isPassable(newCoords, board)) return [1,0]
-      else return [0,1]}
-
+  if (positionHexTile.coords.q - targetHexTile.coords.q < 0 ) return [1,0]
   if (positionHexTile.coords.q - targetHexTile.coords.q > 0 ) return [-1,0]
   if (positionHexTile.coords.q - targetHexTile.coords.q === 0 ) {
     if(positionHexTile.coords.r - targetHexTile.coords.r < 0) return [0,1]
