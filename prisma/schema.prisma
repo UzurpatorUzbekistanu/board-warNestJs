@@ -1,0 +1,132 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum TerrainType {
+  plain
+  forest
+  hill
+  water
+  city
+  swamp
+  road
+  bridge
+  ford
+}
+
+enum UnitName {
+  light_infantry
+  line_infantry
+  guard_infantry
+  light_cavalry
+  dragon_cavalry
+  heavy_cavalry
+  twelve_pounder_cannon
+  six_pounder_cannon
+  howitzer_cannon
+}
+
+enum GamePhase {
+  created
+  deployment
+  battle
+  finished
+}
+
+model Player {
+  id        Int      @id @default(autoincrement())
+  name      String
+  color     String
+  budget    Int      @default(1000)
+  turn      Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  // jednostki gracza (armia)
+  units Unit[]
+
+  // gry w których jest graczem głównym lub wrogiem
+  gamesAsPlayer Game[] @relation("playerGames")
+  gamesAsEnemy  Game[] @relation("enemyGames")
+}
+
+model Game {
+  id        Int       @id @default(autoincrement())
+  phase     GamePhase @default(created)
+  createdAt DateTime  @default(now())
+
+  // dwóch graczy z Twojego interfejsu Game
+  playerId Int
+  player   Player @relation("playerGames", fields: [playerId], references: [id])
+
+  enemyId Int
+  enemy   Player @relation("enemyGames", fields: [enemyId], references: [id])
+
+  units Unit[]
+
+  // plansza gry
+  board Board?
+}
+
+model Board {
+  id     Int  @id @default(autoincrement())
+  width  Int  @default(30)
+  height Int  @default(30)
+  seed   Int? // jeśli chcesz zapisać SEED z generatora mapy
+
+  gameId Int  @unique
+  game   Game @relation(fields: [gameId], references: [id])
+
+  tiles Tile[]
+}
+
+model Tile {
+  id Int @id @default(autoincrement())
+
+  q Int
+  r Int
+
+  terrain      TerrainType
+  passable     Boolean
+  movementCost Int
+
+  boardId Int
+  board   Board @relation(fields: [boardId], references: [id])
+
+  @@unique([boardId, q, r]) // jeden kafel na współrzędne
+}
+
+model Unit {
+  id Int @id @default(autoincrement())
+
+  // typ jednostki z UnitName w kodzie
+  unitType UnitName
+  name     String
+
+  maxHp        Int
+  meleeAttack  Int
+  rangedAttack Int
+  attackRange  Int
+  defense      Int
+  speed        Int
+  cost         Int
+
+  // Twoje uniqueId z GameUnit
+  uniqueId Int @unique
+
+  // HexCoords | null
+  posQ Int?
+  posR Int?
+
+  playerId Int
+  player   Player @relation(fields: [playerId], references: [id])
+
+  gameId Int?
+  game   Game? @relation(fields: [gameId], references: [id])
+
+  @@index([playerId])
+  @@index([gameId])
+}

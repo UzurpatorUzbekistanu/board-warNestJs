@@ -1,6 +1,6 @@
 import { Body, Controller, Param, ParseIntPipe, Patch, Post } from '@nestjs/common';
+import { ApiOperation } from '@nestjs/swagger';
 import { GameService } from './game.service';
-import { ApiOperation } from 'node_modules/@nestjs/swagger/dist';
 import { CreateSoloGameDto } from './dto/create-solo-game.dto';
 import { SetUnitPosition } from './dto/SetUnitPosition.dto';
 import { HexCoords } from 'src/board/domain/hex.types';

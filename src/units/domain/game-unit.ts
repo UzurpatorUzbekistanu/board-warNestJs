@@ -15,7 +15,8 @@ export class GameUnit implements Unit {
         public speed: number,
         public cost: number,
         public uniqueId: number = getUniqueIdForNewInstance(),
-        public position: HexCoords | null = null
+        public position: HexCoords | null = null,
+        public playerId: number = 0
     ){}
 
 

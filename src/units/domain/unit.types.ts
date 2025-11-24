@@ -12,7 +12,7 @@ export interface Unit {
     cost: number;
     uniqueId: number;
     position: HexCoords | null;
-    playerId?: string;
+    playerId: number;
 }
 
 export type UnitName =

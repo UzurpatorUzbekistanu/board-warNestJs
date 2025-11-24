@@ -5,6 +5,7 @@ import { UnitsService } from './units.service';
 import { GameUnit } from './domain/game-unit';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AttackUnitDto } from './dto/attack-unit.dto';
+import type { AttackResult } from './units.service';
 
 @Controller('units')
 export class UnitsController {
@@ -22,7 +23,7 @@ export class UnitsController {
 
     @Post('attack')
     @ApiOperation({ summary: 'Perform an attack between two units (in-memory).' })
-    attackUnit(@Body() body: AttackUnitDto) {
+    attackUnit(@Body() body: AttackUnitDto): AttackResult {
         return this.unitsService.attack(body.attackerId, body.defenderId, body.mode);
     }
 
