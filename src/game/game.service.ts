@@ -21,29 +21,25 @@ export class GameService {
         private readonly boardService: BoardService,
         private readonly unitService: UnitsService) {}
 
-    createSoloGame(dto: CreateSoloGameDto): Game {
-        const player = this.playerService.findById(dto.playerId);
-        if(!player){
-            throw Error("player doesn't exists")
-        }
-        const playerArmy = player.units;
+async createSoloGame(dto: CreateSoloGameDto): Promise<Game> {
+  const player = await this.playerService.findById(dto.playerId);
+  if (!player) throw new Error("Player doesn't exist");
 
-        const enemyArmy: Unit[] = [];
-        const colorEnemy: string = player.color === "red" ? "blue" : "red"
-        const enemyPlayer: Player = this.playerService.createPlayer("Enemy", colorEnemy)
-        enemyPlayer.turn = false;
+  const colorEnemy = player.color === 'red' ? 'blue' : 'red';
+  let enemy = await this.playerService.findById(1); // lub inny stały ID
+  if (!enemy) enemy = await this.playerService.create('Enemy', colorEnemy);
+  enemy.turn = false;
 
-        playerArmy.forEach((unit) => {
-        enemyArmy.push(this.unitService.createUnit(unit.id, enemyPlayer));
-        });
+  // tutaj TODO: wczytać/persistować armię w DB; tymczasowo trzymaj w pamięci
+  const playerArmy: Unit[] = []; // trzeba zasilić z DB lub wygenerować
+  const enemyArmy = playerArmy.map(u => this.unitService.createUnit(u.id as any, enemy));
 
-        const board = this.boardService.getDefaultBoard();
-
-        const game = this.createGame(player, playerArmy, enemyPlayer, enemyArmy, board);
-        game.phase = "deployment"
-        this.games.push(game);
-        return game;
-    }
+  const board = this.boardService.getDefaultBoard();
+  const game = this.createGame(player as any, playerArmy, enemy as any, enemyArmy, board);
+  game.phase = 'deployment';
+  this.games.push(game);
+  return game;
+}
 
 private createGame(
   player: Player,
@@ -125,13 +121,13 @@ finishDeployment(gameId: number): Game | undefined {
   return game;
 }
 
-moveUnit(gameId: number, unitUniqueId: number, targetCoords: HexCoords): HexCoords | undefined{
+async moveUnit(gameId: number, unitUniqueId: number, targetCoords: HexCoords): Promise<HexCoords | undefined>{
    const game: Game = this.findById(gameId);
    const isPassable = game.board.tiles.find(coords => coords.coords == targetCoords)?.passable
    if(!isPassable){
     return undefined
    }
-   const player = this.playerService.findById(unitUniqueId)
+   const player = await this.playerService.findById(unitUniqueId)
    const currentPosition = player?.units.find(unit => unit.uniqueId == unitUniqueId)?.position
    if (!currentPosition) return undefined
    const costMovement = countMovement(currentPosition,targetCoords, game.board)

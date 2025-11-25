@@ -3,21 +3,29 @@ import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { PlayerService } from './player.service';
 import { CreatePlayerDto } from './dto/create-player.dto';
 import { Unit } from 'src/units/domain/unit.types';
+import { PlayerRepositoryAdapter } from 'src/infrastructure/PlayerRepositoryAdapter';
 
 @Controller('players')
 export class PlayerController {
 
     private readonly playerService: PlayerService;
 
-    constructor(playerService: PlayerService) {
+    constructor(playerService: PlayerService,
+                playerRepository: PlayerRepositoryAdapter
+    ) {
         this.playerService = playerService;
     }
 
+    // @Post('create')
+    // @ApiOperation({ summary: 'Create a new player' })
+    // @ApiResponse({ status: 201, description: 'The player has been successfully created.' })
+    // createPlayer(@Body() createPlayerDto: CreatePlayerDto)  {
+    //     return this.playerService.createPlayer(createPlayerDto.name, createPlayerDto.color);
+    // }
     @Post('create')
-    @ApiOperation({ summary: 'Create a new player' })
-    @ApiResponse({ status: 201, description: 'The player has been successfully created.' })
-    createPlayer(@Body() createPlayerDto: CreatePlayerDto)  {
-        return this.playerService.createPlayer(createPlayerDto.name, createPlayerDto.color);
+    @ApiOperation({summary: 'create a new player'})
+    createPlayerDb(@Body() createPlayerDto: CreatePlayerDto)  {
+        return this.playerService.create(createPlayerDto.name, createPlayerDto.color)
     }
 
     @Get()

@@ -1,86 +1,93 @@
 import { Injectable } from '@nestjs/common';
-import { Player } from './domain/player';
+import { Player as PrismaPlayer } from '@prisma/client';
+import { newPlayer, Player } from './domain/player';
 import { Unit, UnitName } from 'src/units/domain/unit.types';
 import { UnitsService } from 'src/units/units.service';
+import { PlayerRepositoryAdapter } from 'src/infrastructure/PlayerRepositoryAdapter';
 
 @Injectable()
 export class PlayerService {
-
+    // In-memory helpers kept for unit logic; DB is the source of truth for players
     private players: Player[] = [];
     private idCounter = 1;
 
-    constructor(private readonly unitService: UnitsService) {}
+    constructor(
+        private readonly unitService: UnitsService,
+        private readonly playerRepository: PlayerRepositoryAdapter,
+    ) {}
 
-    createPlayer(name: string, color: string): Player {
-        const newPlayer: Player = {
-            id: this.idCounter++,
+    private toDomain(dbPlayer: PrismaPlayer): Player {
+        return {
+            id: dbPlayer.id,
+            name: dbPlayer.name,
+            color: dbPlayer.color,
+            budget: dbPlayer.budget,
+            turn: dbPlayer.turn,
+            units: [], // TODO: hydrate units from DB when persisted
+        };
+    }
+
+    async create(name: string, color: string): Promise<Player> {
+        const player: newPlayer = {
             name,
             color,
             units: [],
             budget: 1000,
-            turn: true
+            turn: true,
         };
-        this.players.push(newPlayer);
-        return newPlayer;
+        const created = await this.playerRepository.create(player);
+        return this.toDomain(created as PrismaPlayer);
     }
 
-    findAll(): Player[] {
-        return this.players;
+    async findAll(): Promise<Player[]> {
+        const players = await this.playerRepository.findAll();
+        return players.map((p) => this.toDomain(p as PrismaPlayer));
     }
 
-    findById(id: Player['id']): Player | undefined {
-        return this.players.find(player => player.id === id);
+    async findById(id: Player['id']): Promise<Player | undefined> {
+        const player = await this.playerRepository.findbyID(id);
+        return player ? this.toDomain(player as PrismaPlayer) : undefined;
     }
 
-    deletePlayer(id: Player['id']): boolean {
-        const index = this.players.findIndex(player => player.id === id);
-        if (index !== -1) {
-            this.players.splice(index, 1);
-            return true;
+    deletePlayer(id: number) {
+        return this.playerRepository.delete(id);
+    }
+
+    async updatePlayer(id: Player['id'], name: string, color: string): Promise<Player | undefined> {
+        const updated = await this.playerRepository.update(id, name, color);
+        return updated ? this.toDomain(updated as PrismaPlayer) : undefined;
+    }
+
+    // Below: legacy in-memory unit helpers; adjust when units are persisted in DB.
+    async addUnitToPlayer(playerId: Player['id'], unitIdStr: string): Promise<Player | undefined> {
+        const player = await this.playerRepository.findbyID(playerId);
+        const unitId: UnitName = unitIdStr as UnitName;
+
+        if (!player) {
+            return undefined;
         }
-        return false;
+
+        const newUnit = this.unitService.createUnit(unitId, player);
+        player.units.push(newUnit);
+
+        return player;
     }
 
-    updatePlayer(id: Player['id'], name: string, color: string): Player | undefined {
-        const player = this.findById(id);
-        if (player) {
-            player.name = name;
-            player.color = color;
+    deleteUnitFromPlayer(playerId: Player['id'], uniqueId: number): Player | undefined {
+        const player = this.players.find((p) => p.id === playerId);
+        if (!player) {
+            return undefined;
+        }
+        const unitIndex = player.units.findIndex((unit) => unit.uniqueId === uniqueId);
+        if (unitIndex !== -1) {
+            player.units.splice(unitIndex, 1);
             return player;
         }
         return undefined;
     }
 
-    addUnitToPlayer(playerId: Player['id'], unitIdStr: string): Player | undefined {
-    const player = this.findById(playerId);
-    const unitId: UnitName = unitIdStr as UnitName;
-
-    if (!player) {
-        return undefined;
-    }
-
-    const newUnit = this.unitService.createUnit(unitId, player);
-    player.units.push(newUnit);
-
-    return player;
-    }
-
-    deleteUnitFromPlayer(playerId: Player['id'], uniqueId: number): Player | undefined {
-    const player = this.findById(playerId);
-    if (!player) {
-        return undefined;
-    }
-    const unitIndex = player.units.findIndex(unit => unit.uniqueId === uniqueId);
-    if (unitIndex !== -1) {
-        player.units.splice(unitIndex, 1);
-        return player;
-    }
-    return undefined;
-    }
-
     getPlayerBudget(playerId: Player['id']): number | undefined {
-        const player = this.findById(playerId);
+        const player = this.players.find((p) => p.id === playerId);
         return player ? player.budget : undefined;
     }
-
 }
