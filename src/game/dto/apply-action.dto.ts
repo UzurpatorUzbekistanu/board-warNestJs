@@ -1,4 +1,4 @@
-import { IsIn, IsInt, IsObject, IsOptional } from 'class-validator';
+import { IsArray, IsIn, IsInt, IsObject, IsOptional } from 'class-validator';
 import type { GameActionType } from '../model/game-state';
 
 export class ApplyActionDto {
@@ -12,4 +12,9 @@ export class ApplyActionDto {
   @IsObject()
   @IsOptional()
   payload?: Record<string, any>;
+
+  @IsArray()
+  @IsInt({ each: true })
+  @IsOptional()
+  rolls?: number[];
 }

@@ -50,6 +50,12 @@ enum GameActionType {
   END_TURN
 }
 
+enum SnapshotKind {
+  initial
+  before_action
+  after_action
+}
+
 enum BattleResult {
   win
   lose
@@ -106,6 +112,7 @@ model Game {
   board Board?
 
   actions GameAction[]
+  snapshots GameStateSnapshot[]
 }
 
 model Board {
@@ -176,6 +183,9 @@ model GameAction {
   playerId   Int
   type       GameActionType
   payload    Json
+  stateBefore Json?
+  stateAfter  Json?
+  rngRolls    Json?
   createdAt  DateTime       @default(now())
 }
 
@@ -192,4 +202,20 @@ model UserBattle {
   user User @relation(fields: [userId], references: [id])
 
   @@index([userId, createdAt])
+}
+
+model GameStateSnapshot {
+  id              Int           @id @default(autoincrement())
+  gameId          Int
+  game            Game          @relation(fields: [gameId], references: [id])
+  turnNumber      Int
+  status          GameStatus
+  currentPlayerId Int
+  availableActions Json?
+  rngSeed         String?
+  kind            SnapshotKind  @default(before_action)
+  state           Json
+  createdAt       DateTime      @default(now())
+
+  @@index([gameId, turnNumber, kind])
 }

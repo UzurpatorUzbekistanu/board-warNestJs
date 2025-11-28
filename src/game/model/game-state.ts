@@ -46,5 +46,23 @@ export interface GameAction {
   playerId: Player['id'];
   type: GameActionType;
   payload: any;
+  stateBefore?: GameState;
+  stateAfter?: GameState;
+  rngRolls?: number[];
+  createdAt: Date;
+}
+
+export type SnapshotKind = 'initial' | 'before_action' | 'after_action';
+
+export interface GameStateSnapshot {
+  id: number;
+  gameId: number;
+  turnNumber: number;
+  status: GameStatus;
+  currentPlayerId: Player['id'];
+  availableActions?: any;
+  rngSeed?: string;
+  kind: SnapshotKind;
+  state: GameState;
   createdAt: Date;
 }

@@ -43,6 +43,12 @@ export class GameController {
         return this.gameService.getGameState(gameId);
     }
 
+    @Get(':gameId/trajectory')
+    @ApiOperation({summary: 'export full game trajectory (actions + snapshots)'})
+    async getTrajectory(@Param('gameId', ParseIntPipe) gameId: number) {
+        return this.gameService.getTrajectory(gameId);
+    }
+
     @Post(':gameId/actions')
     @ApiOperation({summary: 'apply action and update game state'})
     async applyAction(

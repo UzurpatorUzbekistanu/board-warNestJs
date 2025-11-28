@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma, GameActionType as PrismaGameActionType, GameStatus as PrismaGameStatus } from '@prisma/client';
+import { Prisma, GameActionType as PrismaGameActionType, GameStatus as PrismaGameStatus, SnapshotKind as PrismaSnapshotKind } from '@prisma/client';
 import { BoardService } from 'src/board/board.service';
 import { PlayerService } from 'src/player/player.service';
 import { Game } from './domain/game';
@@ -186,6 +186,10 @@ async moveUnit(gameId: number, unitUniqueId: number, targetCoords: HexCoords): P
       },
     });
 
+    await this.prisma.gameStateSnapshot.create({
+      data: this.toSnapshotData(createdGame.id, stateWithId, 'initial'),
+    });
+
     return stateWithId;
   }
 
@@ -203,7 +207,9 @@ async moveUnit(gameId: number, unitUniqueId: number, targetCoords: HexCoords): P
 
   async applyAction(gameId: number, actionDto: ApplyActionDto): Promise<GameState> {
     const currentState = await this.getGameState(gameId);
-    const updatedState = this.reduceAction({ ...currentState }, actionDto);
+    const stateBefore = this.cloneState(currentState);
+    const updatedState = this.reduceAction(this.cloneState(currentState), actionDto);
+    const rngRolls = actionDto.rolls ?? (actionDto.payload as any)?.rolls ?? null;
 
     await this.prisma.$transaction([
       this.prisma.game.update({
@@ -220,7 +226,16 @@ async moveUnit(gameId: number, unitUniqueId: number, targetCoords: HexCoords): P
           playerId: actionDto.playerId ?? updatedState.currentPlayerId,
           type: actionDto.type as PrismaGameActionType,
           payload: (actionDto.payload ?? {}) as unknown as Prisma.InputJsonValue,
+          rngRolls: rngRolls as unknown as Prisma.InputJsonValue,
+          stateBefore: stateBefore as unknown as Prisma.InputJsonValue,
+          stateAfter: updatedState as unknown as Prisma.InputJsonValue,
         },
+      }),
+      this.prisma.gameStateSnapshot.create({
+        data: this.toSnapshotData(gameId, stateBefore, 'before_action'),
+      }),
+      this.prisma.gameStateSnapshot.create({
+        data: this.toSnapshotData(gameId, updatedState, 'after_action'),
       }),
     ]);
 
@@ -338,5 +353,39 @@ async moveUnit(gameId: number, unitUniqueId: number, targetCoords: HexCoords): P
     if (!enemy) enemy = await this.playerService.create('Enemy', colorEnemy);
     enemy.turn = false;
     return enemy;
+  }
+
+  async getTrajectory(gameId: number) {
+    const [actions, snapshots] = await this.prisma.$transaction([
+      this.prisma.gameAction.findMany({
+        where: { gameId },
+        orderBy: { createdAt: 'asc' },
+      }),
+      this.prisma.gameStateSnapshot.findMany({
+        where: { gameId },
+        orderBy: [{ turnNumber: 'asc' }, { createdAt: 'asc' }],
+      }),
+    ]);
+
+    if (!actions.length && !snapshots.length) {
+      throw new NotFoundException('Game trajectory not found');
+    }
+
+    return { gameId, actions, snapshots };
+  }
+
+  private cloneState(state: GameState): GameState {
+    return JSON.parse(JSON.stringify(state)) as GameState;
+  }
+
+  private toSnapshotData(gameId: number, state: GameState, kind: PrismaSnapshotKind) {
+    return {
+      gameId,
+      turnNumber: state.turnNumber,
+      status: state.status as PrismaGameStatus,
+      currentPlayerId: state.currentPlayerId,
+      kind,
+      state: state as unknown as Prisma.InputJsonValue,
+    };
   }
 }
