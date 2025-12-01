@@ -2,9 +2,11 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { FileLogger } from './common/logger/file-logger';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const logger = new FileLogger('Bootstrap');
+  const app = await NestFactory.create(AppModule, { logger });
 
   app.enableCors({
     origin: process.env.CORS_ORIGIN?.split(',').map(o => o.trim()).filter(Boolean) || 'http://localhost:4000',
