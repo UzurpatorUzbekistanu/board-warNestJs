@@ -17,6 +17,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
     const pool = new Pool({ connectionString: databaseUrl });
 
     super({
+      log: ['error', 'warn'],
       adapter: new PrismaPg(pool),
     });
   }
