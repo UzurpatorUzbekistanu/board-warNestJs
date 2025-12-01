@@ -4,6 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  schemas  = ["BoardWar"]
 }
 
 enum TerrainType {
@@ -16,6 +17,8 @@ enum TerrainType {
   road
   bridge
   ford
+
+  @@schema("BoardWar")
 }
 
 enum UnitName {
@@ -28,6 +31,8 @@ enum UnitName {
   twelve_pounder_cannon
   six_pounder_cannon
   howitzer_cannon
+
+  @@schema("BoardWar")
 }
 
 enum GamePhase {
@@ -35,6 +40,8 @@ enum GamePhase {
   deployment
   battle
   finished
+
+  @@schema("BoardWar")
 }
 
 enum GameStatus {
@@ -42,24 +49,32 @@ enum GameStatus {
   in_progress
   finished
   paused
+
+  @@schema("BoardWar")
 }
 
 enum GameActionType {
   MOVE
   ATTACK
   END_TURN
+
+  @@schema("BoardWar")
 }
 
 enum SnapshotKind {
   initial
   before_action
   after_action
+
+  @@schema("BoardWar")
 }
 
 enum BattleResult {
   win
   lose
   draw
+
+  @@schema("BoardWar")
 }
 
 model User {
@@ -71,6 +86,8 @@ model User {
 
   player Player @relation(fields: [id], references: [id])
   battles UserBattle[]
+
+  @@schema("BoardWar")
 }
 
 model Player {
@@ -84,11 +101,13 @@ model Player {
   // jednostki gracza (armia)
   units Unit[]
 
-  // gry w których jest graczem głównym lub wrogiem
+  // gry w ktĂłrych jest graczem gĹ‚Ăłwnym lub wrogiem
   gamesAsPlayer Game[] @relation("playerGames")
   gamesAsEnemy  Game[] @relation("enemyGames")
 
   user User?
+
+  @@schema("BoardWar")
 }
 
 model Game {
@@ -99,7 +118,7 @@ model Game {
   status    GameStatus @default(not_started)
   stateJson Json?
 
-  // dwóch graczy z Twojego interfejsu Game
+  // dwĂłch graczy z Twojego interfejsu Game
   playerId Int
   player   Player @relation("playerGames", fields: [playerId], references: [id])
 
@@ -113,18 +132,22 @@ model Game {
 
   actions GameAction[]
   snapshots GameStateSnapshot[]
+
+  @@schema("BoardWar")
 }
 
 model Board {
   id     Int  @id @default(autoincrement())
   width  Int  @default(30)
   height Int  @default(30)
-  seed   Int? // jeśli chcesz zapisać SEED z generatora mapy
+  seed   Int? // jeĹ›li chcesz zapisaÄ‡ SEED z generatora mapy
 
   gameId Int  @unique
   game   Game @relation(fields: [gameId], references: [id])
 
   tiles Tile[]
+
+  @@schema("BoardWar")
 }
 
 model Tile {
@@ -140,7 +163,8 @@ model Tile {
   boardId Int
   board   Board @relation(fields: [boardId], references: [id])
 
-  @@unique([boardId, q, r]) // jeden kafel na współrzędne
+  @@unique([boardId, q, r]) // jeden kafel na wspƈ�'rz�tdne
+  @@schema("BoardWar")
 }
 
 model Unit {
@@ -173,6 +197,7 @@ model Unit {
 
   @@index([playerId])
   @@index([gameId])
+  @@schema("BoardWar")
 }
 
 model GameAction {
@@ -187,6 +212,8 @@ model GameAction {
   stateAfter  Json?
   rngRolls    Json?
   createdAt  DateTime       @default(now())
+
+  @@schema("BoardWar")
 }
 
 model UserBattle {
@@ -202,6 +229,7 @@ model UserBattle {
   user User @relation(fields: [userId], references: [id])
 
   @@index([userId, createdAt])
+  @@schema("BoardWar")
 }
 
 model GameStateSnapshot {
@@ -218,4 +246,7 @@ model GameStateSnapshot {
   createdAt       DateTime      @default(now())
 
   @@index([gameId, turnNumber, kind])
+  @@schema("BoardWar")
 }
+
+
