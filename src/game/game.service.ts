@@ -350,7 +350,11 @@ async moveUnit(gameId: number, unitUniqueId: number, targetCoords: HexCoords): P
   private async resolveEnemy(player: Player): Promise<Player> {
     const colorEnemy = player.color === 'red' ? 'blue' : 'red';
     let enemy = await this.playerService.findById(1);
-    if (!enemy) enemy = await this.playerService.create('Enemy', colorEnemy);
+
+    // Ensure enemy is not the same player; if missing or same ID, create a fresh enemy.
+    if (!enemy || enemy.id === player.id) {
+      enemy = await this.playerService.create('Enemy', colorEnemy);
+    }
     enemy.turn = false;
     return enemy;
   }
