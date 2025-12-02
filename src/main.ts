@@ -9,8 +9,18 @@ async function bootstrap() {
   const logger = new FileLogger('Bootstrap');
   const app = await NestFactory.create(AppModule, { logger });
 
+  const envOrigins =
+    process.env.CORS_ORIGIN?.split(',').map((o) => o.trim()).filter(Boolean) ?? [];
+  const extraOrigins = ['https://boardwar.toadres.pl', 'https://boardwar.bieda.it'];
+  const normalizedOrigins = envOrigins.flatMap((o) =>
+    o.startsWith('http://') ? [o, o.replace('http://', 'https://')] : [o],
+  );
+  const corsOrigins = Array.from(
+    new Set([...normalizedOrigins, ...extraOrigins, 'http://localhost:3000', 'http://localhost:4000']),
+  );
+
   app.enableCors({
-    origin: process.env.CORS_ORIGIN?.split(',').map(o => o.trim()).filter(Boolean) || 'http://localhost:4000',
+    origin: corsOrigins,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Accept', 'Authorization'],
     credentials: true,
