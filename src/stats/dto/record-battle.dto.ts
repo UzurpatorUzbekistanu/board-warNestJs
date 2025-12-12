@@ -1,5 +1,5 @@
 import { IsArray, IsEnum, IsInt, IsOptional, IsPositive, IsString, Min } from 'class-validator'; // walidatory rekordow
-import { BattleResult } from '@prisma/client'; // enum wyniku bitwy
+import { type BattleResult, BattleResult as BattleResultEnum } from '@prisma/client'; // typ + wartosci enumu
 
 export class RecordBattleDto {
   @IsOptional()
@@ -7,7 +7,7 @@ export class RecordBattleDto {
   @Min(1)
   gameId?: number; // opcjonalny id gry
 
-  @IsEnum(BattleResult)
+  @IsEnum(BattleResultEnum)
   result!: BattleResult; // wynik (win/lose/draw)
 
   @IsInt()

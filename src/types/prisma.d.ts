@@ -12,6 +12,11 @@ declare module '@prisma/client' {
   export type GameStatus = 'not_started' | 'in_progress' | 'finished' | 'paused';
   export type SnapshotKind = 'initial' | 'before_action' | 'after_action';
   export type BattleResult = 'win' | 'lose' | 'draw';
+  export const BattleResult: {
+    win: 'win';
+    lose: 'lose';
+    draw: 'draw';
+  };
 
   // Simplified model shapes used for typing in services.
   export type Player = {

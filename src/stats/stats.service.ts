@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'; // DI serwisu
-import { BattleResult, Prisma } from '@prisma/client'; // enum wynikow + typy JSON
+import { type BattleResult, BattleResult as BattleResultEnum, Prisma } from '@prisma/client'; // enum wynikow + typy JSON
 import { PrismaService } from '../prisma/prisma.service'; // klient bazy
 import { RecordBattleDto } from './dto/record-battle.dto'; // dto zapisu bitwy
 
@@ -31,9 +31,9 @@ export class StatsService {
         acc.battles += 1; // licznik bitew
         acc.damageDealt += battle.damageDealt; // kumuluj dmg zadany
         acc.damageTaken += battle.damageTaken; // kumuluj dmg otrzymany
-        if (battle.result === BattleResult.win) acc.wins += 1; // zwyciestwa
-        if (battle.result === BattleResult.lose) acc.losses += 1; // porazki
-        if (battle.result === BattleResult.draw) acc.draws += 1; // remisy
+        if (battle.result === BattleResultEnum.win) acc.wins += 1; // zwyciestwa
+        if (battle.result === BattleResultEnum.lose) acc.losses += 1; // porazki
+        if (battle.result === BattleResultEnum.draw) acc.draws += 1; // remisy
         return acc; // zwroc akumulator
       },
       { battles: 0, wins: 0, losses: 0, draws: 0, damageDealt: 0, damageTaken: 0 },
