@@ -12,13 +12,23 @@ async function bootstrap() {
   app.setGlobalPrefix('api'); // prefix sciezek
 
   const envOrigins =
-    process.env.CORS_ORIGIN?.split(',').map((o) => o.trim()).filter(Boolean) ?? []; // konfiguracja env
-  const extraOrigins = ['https://boardwar.toadres.pl', 'https://boardwar.bieda.it']; // dodatkowe originy prod
+    process.env.CORS_ORIGIN?.split(',')
+      .map((o) => o.trim())
+      .filter(Boolean) ?? []; // konfiguracja env
+  const extraOrigins = [
+    'https://boardwar.toadres.pl',
+    'https://boardwar.bieda.it',
+  ]; // dodatkowe originy prod
   const normalizedOrigins = envOrigins.flatMap((o) =>
     o.startsWith('http://') ? [o, o.replace('http://', 'https://')] : [o],
   );
   const corsOrigins = Array.from(
-    new Set([...normalizedOrigins, ...extraOrigins, 'http://localhost:3000', 'http://localhost:4000']),
+    new Set([
+      ...normalizedOrigins,
+      ...extraOrigins,
+      'http://localhost:3000',
+      'http://localhost:4000',
+    ]),
   );
 
   app.enableCors({
@@ -38,7 +48,7 @@ async function bootstrap() {
     .build();
 
   const swaggerDoc = SwaggerModule.createDocument(app, swaggerConfig); // generuj specyfikacje
-  const swaggerPath = 'api/docs'; 
+  const swaggerPath = 'api/docs';
   SwaggerModule.setup(swaggerPath, app, swaggerDoc, {
     jsonDocumentUrl: 'api/api-json',
     customSiteTitle: 'Board War API Docs',
@@ -47,4 +57,4 @@ async function bootstrap() {
   await app.listen(process.env.PORT ?? 3000); // start serwera
 }
 
-bootstrap();
+void bootstrap();

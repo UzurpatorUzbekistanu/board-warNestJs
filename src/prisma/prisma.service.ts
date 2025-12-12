@@ -1,4 +1,5 @@
 // src/prisma/prisma.service.ts
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call */
 import 'dotenv/config'; // ladowanie env
 import { Injectable, OnModuleInit } from '@nestjs/common'; // DI + hook init
 import { PrismaClient } from '@prisma/client'; // klient Prisma
@@ -15,10 +16,11 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
     }
 
     const pool = new Pool({ connectionString: databaseUrl }); // utworz pool PG
+    const adapter = new PrismaPg(pool) as unknown; // adapter pg (typowany zewnetrznie)
 
     super({
       log: ['error', 'warn'], // wlaczone logi
-      adapter: new PrismaPg(pool), // podmien adapter na pg
+      adapter: adapter as never, // podmien adapter na pg
     });
   }
 

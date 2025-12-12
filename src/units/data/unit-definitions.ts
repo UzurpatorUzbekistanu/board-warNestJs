@@ -1,15 +1,15 @@
-import {UnitName } from "../domain/unit.types"; // identyfikatory jednostek
+import { UnitName } from '../domain/unit.types'; // identyfikatory jednostek
 
 type UnitTemplate = {
-    id: UnitName; // typ jednostki
-    name: string; // nazwa widoczna
-    maxHp: number; // maksymalne HP
-    meleeAttack: number; // sila wrecz
-    rangedAttack: number; // sila dystansowa
-    attackRange: number; // zasieg strzalu
-    defense: number; // pancerz
-    speed: number; // zasieg ruchu
-    cost: number; // koszt rekrutacji
+  id: UnitName; // typ jednostki
+  name: string; // nazwa widoczna
+  maxHp: number; // maksymalne HP
+  meleeAttack: number; // sila wrecz
+  rangedAttack: number; // sila dystansowa
+  attackRange: number; // zasieg strzalu
+  defense: number; // pancerz
+  speed: number; // zasieg ruchu
+  cost: number; // koszt rekrutacji
 };
 
 export const UNIT_TEMPLATES: Record<UnitName, UnitTemplate> = {
@@ -35,7 +35,7 @@ export const UNIT_TEMPLATES: Record<UnitName, UnitTemplate> = {
     speed: 4,
     cost: 45,
   },
-    'guard-infantry': {
+  'guard-infantry': {
     id: 'guard-infantry',
     name: 'Guard Infantry',
     maxHp: 200,
@@ -45,8 +45,8 @@ export const UNIT_TEMPLATES: Record<UnitName, UnitTemplate> = {
     defense: 15,
     speed: 3,
     cost: 65,
-    },
-    'light-cavalry': {
+  },
+  'light-cavalry': {
     id: 'light-cavalry',
     name: 'Light Cavalry',
     maxHp: 120,
@@ -56,8 +56,8 @@ export const UNIT_TEMPLATES: Record<UnitName, UnitTemplate> = {
     defense: 8,
     speed: 8,
     cost: 50,
-    },
-    'dragon-cavalry': {
+  },
+  'dragon-cavalry': {
     id: 'dragon-cavalry',
     name: 'Dragon Cavalry',
     maxHp: 180,
@@ -67,8 +67,8 @@ export const UNIT_TEMPLATES: Record<UnitName, UnitTemplate> = {
     defense: 12,
     speed: 6,
     cost: 80,
-    },
-    'heavy-cavalry': {
+  },
+  'heavy-cavalry': {
     id: 'heavy-cavalry',
     name: 'Heavy Cavalry',
     maxHp: 250,
@@ -78,8 +78,8 @@ export const UNIT_TEMPLATES: Record<UnitName, UnitTemplate> = {
     defense: 20,
     speed: 6,
     cost: 120,
-    },
-    'twelve-pounder-cannon': {
+  },
+  'twelve-pounder-cannon': {
     id: 'twelve-pounder-cannon',
     name: '12-Pounder Cannon',
     maxHp: 100,
@@ -89,8 +89,8 @@ export const UNIT_TEMPLATES: Record<UnitName, UnitTemplate> = {
     defense: 5,
     speed: 3,
     cost: 150,
-    },
-    'six-pounder-cannon': {
+  },
+  'six-pounder-cannon': {
     id: 'six-pounder-cannon',
     name: '6-Pounder Cannon',
     maxHp: 80,
@@ -100,8 +100,8 @@ export const UNIT_TEMPLATES: Record<UnitName, UnitTemplate> = {
     defense: 3,
     speed: 3,
     cost: 100,
-    },
-    'howitzer-cannon': {
+  },
+  'howitzer-cannon': {
     id: 'howitzer-cannon',
     name: 'Howitzer Cannon',
     maxHp: 90,
@@ -111,5 +111,5 @@ export const UNIT_TEMPLATES: Record<UnitName, UnitTemplate> = {
     defense: 4,
     speed: 3,
     cost: 130,
-    },
+  },
 };

@@ -1,4 +1,9 @@
-import { ConflictException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common'; // bledy i DI
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common'; // bledy i DI
 import { JwtService } from '@nestjs/jwt'; // generowanie JWT
 import * as bcrypt from 'bcryptjs'; // hashowanie i weryfikacja hasel
 import { UserService } from '../user/user.service'; // operacje na uzytkownikach

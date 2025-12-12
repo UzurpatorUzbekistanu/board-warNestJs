@@ -1,8 +1,8 @@
-import { Unit } from "src/units/domain/unit.types"; // definicja jednostki umieszczonej na polu
+import { Unit } from 'src/units/domain/unit.types'; // definicja jednostki umieszczonej na polu
 
 type axialCoords = {
-    q: number; // wspolrzedna q w axial
-    r: number; // wspolrzedna r w axial
+  q: number; // wspolrzedna q w axial
+  r: number; // wspolrzedna r w axial
 };
 
 export enum TerrainType {
@@ -14,16 +14,15 @@ export enum TerrainType {
   Swamp = 'swamp', // bagno
   Road = 'road', // droga
   Bridge = 'bridge', // most
-  Ford = 'ford' // brod
+  Ford = 'ford', // brod
 }
 
-export interface HexCoords extends axialCoords {} // alias na koordy axial
-
+export type HexCoords = axialCoords; // alias na koordy axial
 
 export interface HexTile {
-    coords: HexCoords; // polozenie na planszy
-    terrain: TerrainType; // typ terenu
-    passable: boolean; // czy mozna przejsc/przejechac
-    movementCost: number; // koszt ruchu przez pole
-    unit?: Unit // jednostka zajmujaca pole (opcjonalnie)
+  coords: HexCoords; // polozenie na planszy
+  terrain: TerrainType; // typ terenu
+  passable: boolean; // czy mozna przejsc/przejechac
+  movementCost: number; // koszt ruchu przez pole
+  unit?: Unit; // jednostka zajmujaca pole (opcjonalnie)
 }

@@ -1,5 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common'; // DI i 404
-import { Prisma, GameActionType as PrismaGameActionType, GameStatus as PrismaGameStatus, SnapshotKind as PrismaSnapshotKind } from '@prisma/client'; // typy Prisma
+import {
+  Prisma,
+  GameActionType as PrismaGameActionType,
+  GameStatus as PrismaGameStatus,
+  SnapshotKind as PrismaSnapshotKind,
+} from '@prisma/client'; // typy Prisma
 import { BoardService } from 'src/board/board.service'; // logika planszy
 import { PlayerService } from 'src/player/player.service'; // logika gracza
 import { Game } from './domain/game'; // domenowy typ gry
@@ -9,7 +14,6 @@ import { UnitsService } from 'src/units/units.service'; // serwis jednostek
 import { Player } from 'src/player/domain/player'; // model gracza
 import { Board } from 'src/board/domain/board'; // model planszy
 import { HexCoords } from 'src/board/domain/hex.types'; // koordy heksowe
-import { countMovement } from 'src/board/domain/hex.utils'; // licznik ruchu
 import { PrismaService } from 'src/prisma/prisma.service'; // klient bazy
 import {
   GameState,
@@ -21,131 +25,139 @@ import { ApplyActionDto } from './dto/apply-action.dto'; // dto akcji
 
 @Injectable()
 export class GameService {
+  private games: Game[] = []; // gry przechowywane w pamieci
+  private idCounter = 1; // licznik id gier
 
-    private games: Game[] = []; // gry przechowywane w pamieci
-    private idCounter = 1; // licznik id gier 
+  constructor(
+    private readonly playerService: PlayerService,
+    private readonly boardService: BoardService,
+    private readonly unitService: UnitsService,
+    private readonly prisma: PrismaService,
+  ) {}
 
-    constructor(
-        private readonly playerService: PlayerService, 
-        private readonly boardService: BoardService,
-        private readonly unitService: UnitsService,
-        private readonly prisma: PrismaService,
-    ) {}
+  async createSoloGame(dto: CreateSoloGameDto): Promise<Game> {
+    const player = await this.playerService.findById(dto.playerId);
+    if (!player) throw new Error("Player doesn't exist");
 
-async createSoloGame(dto: CreateSoloGameDto): Promise<Game> {
-  const player = await this.playerService.findById(dto.playerId);
-  if (!player) throw new Error("Player doesn't exist");
+    const colorEnemy = player.color === 'red' ? 'blue' : 'red';
+    let enemy = await this.playerService.findById(1); // lub inny stały ID
+    if (!enemy) enemy = await this.playerService.create('Enemy', colorEnemy);
+    enemy.turn = false;
 
-  const colorEnemy = player.color === 'red' ? 'blue' : 'red';
-  let enemy = await this.playerService.findById(1); // lub inny stały ID
-  if (!enemy) enemy = await this.playerService.create('Enemy', colorEnemy);
-  enemy.turn = false;
+    // tutaj TODO: wczytać/persistować armię w DB; tymczasowo trzymaj w pamięci
+    const playerArmy: Unit[] = []; // trzeba zasilić z DB lub wygenerować
+    const enemyArmy: Unit[] = [];
 
-  // tutaj TODO: wczytać/persistować armię w DB; tymczasowo trzymaj w pamięci
-  const playerArmy: Unit[] = []; // trzeba zasilić z DB lub wygenerować
-  const enemyArmy = playerArmy.map(u => this.unitService.createUnit(u.id as any, enemy));
+    const board = this.boardService.getDefaultBoard();
+    const game = this.createGame(player, playerArmy, enemy, enemyArmy, board);
+    game.phase = 'deployment';
+    this.games.push(game);
+    return game;
+  }
 
-  const board = this.boardService.getDefaultBoard();
-  const game = this.createGame(player as any, playerArmy, enemy as any, enemyArmy, board);
-  game.phase = 'deployment';
-  this.games.push(game);
-  return game;
-}
-
-private createGame(
-  player: Player,
-  playerArmy: Unit[],
-  enemy: Player,
-  enemyArmy: Unit[],
-  board: Board,
-): Game {
-
+  private createGame(
+    player: Player,
+    playerArmy: Unit[],
+    enemy: Player,
+    enemyArmy: Unit[],
+    board: Board,
+  ): Game {
     const game: Game = {
-  id: this.idCounter++,
-  player,
-  playerArmy,
-  enemy: enemy,
-  enemyArmy,
-  board,
-  phase: 'created',
-  createdAt: new Date(),
-};
+      id: this.idCounter++,
+      player,
+      playerArmy,
+      enemy: enemy,
+      enemyArmy,
+      board,
+      phase: 'created',
+      createdAt: new Date(),
+    };
 
-  return game
-}
-
-setUnitPosition(
-  gameId: number,
-  unitUniqueId: number,
-  coords: HexCoords,
-): Game | undefined {
-
-  const game: Game = this.findById(gameId);
-  const tile = game.board.tiles.find(t => t.coords.q === coords.q && t.coords.r === coords.r)
-  let unit = game.playerArmy.find(u => u.uniqueId === unitUniqueId);
-  if (!unit) {
-    unit = game.enemyArmy.find(u => u.uniqueId === unitUniqueId);
+    return game;
   }
-  if (!unit) {
-    throw new Error('Unit not found');
-  }
-  let isOccupied: boolean = this.isOccupied(game.playerArmy, coords)
-  isOccupied = this.isOccupied(game.enemyArmy, coords)
-  if(isOccupied){
+
+  setUnitPosition(
+    gameId: number,
+    unitUniqueId: number,
+    coords: HexCoords,
+  ): Game | undefined {
+    const game: Game = this.findById(gameId);
+    let unit = game.playerArmy.find((u) => u.uniqueId === unitUniqueId);
+    if (!unit) {
+      unit = game.enemyArmy.find((u) => u.uniqueId === unitUniqueId);
+    }
+    if (!unit) {
+      throw new Error('Unit not found');
+    }
+    let isOccupied: boolean = this.isOccupied(game.playerArmy, coords);
+    isOccupied = this.isOccupied(game.enemyArmy, coords);
+    if (isOccupied) {
       unit.position = coords;
-  }else{
-    return undefined
+    } else {
+      return undefined;
+    }
+
+    return game;
   }
 
-  return game;
+  findById(gameId: number): Game {
+    const game: Game[] = this.games.filter((game) => game.id === gameId);
+    return game[0];
+  }
 
-}
+  isOccupied(units: Unit[], coords: HexCoords): boolean {
+    return units.some(
+      (u) =>
+        u.position?.q != null &&
+        u.position?.r != null &&
+        u.position.q === coords.q &&
+        u.position.r === coords.r,
+    );
+  }
 
-findById(gameId: number): Game {
-  const game: Game[] = this.games.filter(game => game.id === gameId);
-  return game[0]
-}
+  finishDeployment(gameId: number): Game | undefined {
+    const game: Game = this.findById(gameId);
 
- isOccupied(units: Unit[], coords: HexCoords): boolean {
-  return units.some(u =>
-    u.position?.q != null &&
-    u.position?.r != null &&
-    u.position.q === coords.q &&
-    u.position.r === coords.r
-  );
-}
+    const isGameInDeployment: boolean =
+      game.phase === 'deployment' ? true : false;
 
+    if (!isGameInDeployment) return undefined;
 
-finishDeployment(gameId: number): Game | undefined {
-  const game: Game = this.findById(gameId);
+    const isPlayerArmyDeployed: boolean =
+      game.playerArmy.filter((unit) => unit.position == null).length > 0
+        ? true
+        : false;
+    const isEnemyArmyDeployed: boolean =
+      game.enemyArmy.filter((unit) => unit.position == null).length > 0
+        ? true
+        : false;
+    if (!(isPlayerArmyDeployed && isEnemyArmyDeployed)) return undefined;
 
-  const isGameInDeployment: boolean = game.phase === "deployment" ? true: false;
+    game.phase = 'battle';
 
-  if (!isGameInDeployment) return undefined;
+    return game;
+  }
 
-  const isPlayerArmyDeployed: boolean = game.playerArmy.filter(unit => unit.position == null).length  > 0 ? true : false;
-  const isEnemyArmyDeployed: boolean = game.enemyArmy.filter(unit => unit.position == null).length  > 0 ? true : false;
-  if(!(isPlayerArmyDeployed && isEnemyArmyDeployed)) return undefined;
+  async moveUnit(
+    gameId: number,
+    unitUniqueId: number,
+    targetCoords: HexCoords,
+  ): Promise<HexCoords | undefined> {
+    const game: Game = this.findById(gameId);
+    const isPassable = game.board.tiles.find(
+      (coords) => coords.coords == targetCoords,
+    )?.passable;
+    if (!isPassable) {
+      return undefined;
+    }
+    const player = await this.playerService.findById(unitUniqueId);
+    const currentPosition = player?.units.find(
+      (unit) => unit.uniqueId == unitUniqueId,
+    )?.position;
+    if (!currentPosition) return undefined;
 
-  game.phase = 'battle';
-
-  return game;
-}
-
-async moveUnit(gameId: number, unitUniqueId: number, targetCoords: HexCoords): Promise<HexCoords | undefined>{
-   const game: Game = this.findById(gameId);
-   const isPassable = game.board.tiles.find(coords => coords.coords == targetCoords)?.passable
-   if(!isPassable){
-    return undefined
-   }
-   const player = await this.playerService.findById(unitUniqueId)
-   const currentPosition = player?.units.find(unit => unit.uniqueId == unitUniqueId)?.position
-   if (!currentPosition) return undefined
-   const costMovement = countMovement(currentPosition,targetCoords, game.board)
-
-   return targetCoords
-
-}
+    return targetCoords;
+  }
 
   async createStatefulSoloGame(dto: CreateSoloGameDto): Promise<GameState> {
     const player = await this.playerService.findById(dto.playerId);
@@ -173,11 +185,14 @@ async moveUnit(gameId: number, unitUniqueId: number, targetCoords: HexCoords): P
         phase: 'created',
         playerId: player.id,
         enemyId: enemy.id,
-        status: PrismaGameStatus.not_started,
+        status: 'not_started' as PrismaGameStatus,
       },
     });
 
-    const stateWithId: GameState = { ...baseState, gameId: createdGame.id.toString() };
+    const stateWithId: GameState = {
+      ...baseState,
+      gameId: createdGame.id.toString(),
+    };
     await this.prisma.game.update({
       where: { id: createdGame.id },
       data: {
@@ -205,15 +220,23 @@ async moveUnit(gameId: number, unitUniqueId: number, targetCoords: HexCoords): P
     return game.stateJson as unknown as GameState;
   }
 
-  async applyAction(gameId: number, actionDto: ApplyActionDto): Promise<GameState> {
+  async applyAction(
+    gameId: number,
+    actionDto: ApplyActionDto,
+  ): Promise<GameState> {
     // Pobierz aktualny stan gry z bazy.
     const currentState = await this.getGameState(gameId);
     // Zrób głęboką kopię stanu na potrzeby logów/snapshotów.
     const stateBefore = this.cloneState(currentState);
     // Wylicz nowy stan po zastosowaniu akcji.
-    const updatedState = this.reduceAction(this.cloneState(currentState), actionDto);
+    const updatedState = this.reduceAction(
+      this.cloneState(currentState),
+      actionDto,
+    );
     // Zapisz rzuty RNG przekazane w akcji (jeśli są).
-    const rngRolls = actionDto.rolls ?? (actionDto.payload as any)?.rolls ?? null;
+    const payloadRolls = (actionDto.payload as { rolls?: unknown } | undefined)
+      ?.rolls;
+    const rngRolls = actionDto.rolls ?? payloadRolls ?? null;
 
     // W jednej transakcji zapisujemy nowy stan gry, log akcji i snapshoty.
     await this.prisma.$transaction([
@@ -232,7 +255,8 @@ async moveUnit(gameId: number, unitUniqueId: number, targetCoords: HexCoords): P
           turnNumber: updatedState.turnNumber,
           playerId: actionDto.playerId ?? updatedState.currentPlayerId,
           type: actionDto.type as PrismaGameActionType,
-          payload: (actionDto.payload ?? {}) as unknown as Prisma.InputJsonValue,
+          payload: (actionDto.payload ??
+            {}) as unknown as Prisma.InputJsonValue,
           rngRolls: rngRolls as unknown as Prisma.InputJsonValue,
           stateBefore: stateBefore as unknown as Prisma.InputJsonValue,
           stateAfter: updatedState as unknown as Prisma.InputJsonValue,
@@ -252,31 +276,43 @@ async moveUnit(gameId: number, unitUniqueId: number, targetCoords: HexCoords): P
     return updatedState;
   }
 
-  private reduceAction(currentState: GameState, actionDto: ApplyActionDto): GameState {
-    // Budujemy kolejny stan: kopiujemy dane, podbijamy status i klonujemy listę jednostek.
+  private reduceAction(
+    currentState: GameState,
+    actionDto: ApplyActionDto,
+  ): GameState {
+    // Budujemy kolejny stan: kopiujemy dane, podbijamy status i klonujemy list? jednostek.
     const nextState: GameState = {
       ...currentState,
       status: this.bumpStatus(currentState.status),
-      units: currentState.units.map(u => ({ ...u })),
+      units: currentState.units.map((u) => ({ ...u })),
     };
 
     // Reakcja na konkretny typ akcji gracza.
     switch (actionDto.type) {
       case 'MOVE': {
-        // Przesuń jednostkę, gdy przekazano jej id oraz nowe współrzędne.
-        const { unitId, q, r } = actionDto.payload ?? {};
+        // Przesu? jednostk?, gdy przekazano jej id oraz nowe wsp??rz?dne.
+        const { unitId, q, r } =
+          (actionDto.payload as Partial<{
+            unitId: string | number;
+            q: number;
+            r: number;
+          }>) ?? {};
         if (unitId !== undefined && q !== undefined && r !== undefined) {
-          nextState.units = nextState.units.map(u =>
+          nextState.units = nextState.units.map((u) =>
             u.unitId === String(unitId) ? { ...u, q, r } : u,
           );
         }
         break;
       }
       case 'ATTACK': {
-        // Zdejmij punkty życia z celu; HP nie spada poniżej zera.
-        const { targetUnitId, damage } = actionDto.payload ?? {};
+        // Zdejmij punkty ?ycia z celu; HP nie spada poni?ej zera.
+        const { targetUnitId, damage } =
+          (actionDto.payload as Partial<{
+            targetUnitId: string | number;
+            damage: number;
+          }>) ?? {};
         if (targetUnitId !== undefined && typeof damage === 'number') {
-          nextState.units = nextState.units.map(u =>
+          nextState.units = nextState.units.map((u) =>
             u.unitId === String(targetUnitId)
               ? { ...u, currentHP: Math.max(0, u.currentHP - damage) }
               : u,
@@ -285,7 +321,7 @@ async moveUnit(gameId: number, unitUniqueId: number, targetCoords: HexCoords): P
         break;
       }
       case 'END_TURN': {
-        // Zakończenie tury: zwiększ licznik i przełącz aktywnego gracza.
+        // Zako?czenie tury: zwi?ksz licznik i prze??cz aktywnego gracza.
         nextState.turnNumber += 1;
         nextState.currentPlayerId = this.nextPlayerId(
           nextState.players,
@@ -299,7 +335,6 @@ async moveUnit(gameId: number, unitUniqueId: number, targetCoords: HexCoords): P
 
     return nextState;
   }
-
   private bumpStatus(status: GameState['status']): GameState['status'] {
     if (status === 'finished' || status === 'paused') {
       return status;
@@ -307,9 +342,12 @@ async moveUnit(gameId: number, unitUniqueId: number, targetCoords: HexCoords): P
     return status === 'not_started' ? 'in_progress' : status;
   }
 
-  private nextPlayerId(players: PlayerInGameState[], currentPlayerId: number): number {
+  private nextPlayerId(
+    players: PlayerInGameState[],
+    currentPlayerId: number,
+  ): number {
     if (!players.length) return currentPlayerId;
-    const currentIdx = players.findIndex(p => p.playerId === currentPlayerId);
+    const currentIdx = players.findIndex((p) => p.playerId === currentPlayerId);
     const nextIdx = currentIdx === -1 ? 0 : (currentIdx + 1) % players.length;
     return players[nextIdx].playerId;
   }
@@ -327,7 +365,9 @@ async moveUnit(gameId: number, unitUniqueId: number, targetCoords: HexCoords): P
       { playerId: enemy.id, name: enemy.name, color: enemy.color },
     ];
 
-    const unitsState = [...playerArmy, ...enemyArmy].map(unit => this.toUnitState(unit));
+    const unitsState = [...playerArmy, ...enemyArmy].map((unit) =>
+      this.toUnitState(unit),
+    );
 
     return {
       gameId,
@@ -353,7 +393,7 @@ async moveUnit(gameId: number, unitUniqueId: number, targetCoords: HexCoords): P
   }
 
   private toTilesState(board: Board): HexTileState[] {
-    return board.tiles.map(tile => ({
+    return board.tiles.map((tile) => ({
       q: tile.coords.q,
       r: tile.coords.r,
       terrain: tile.terrain,
@@ -402,7 +442,11 @@ async moveUnit(gameId: number, unitUniqueId: number, targetCoords: HexCoords): P
     return JSON.parse(JSON.stringify(state)) as GameState;
   }
 
-  private toSnapshotData(gameId: number, state: GameState, kind: PrismaSnapshotKind) {
+  private toSnapshotData(
+    gameId: number,
+    state: GameState,
+    kind: PrismaSnapshotKind,
+  ) {
     return {
       gameId,
       turnNumber: state.turnNumber,

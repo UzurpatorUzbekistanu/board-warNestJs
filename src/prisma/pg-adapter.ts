@@ -1,4 +1,5 @@
-import { Pool, PoolClient } from 'pg'; // klient postgres
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return */
+import { Pool, PoolClient, QueryResult } from 'pg'; // klient postgres
 
 type SqlQuery = {
   sql: string; // zapytanie
@@ -45,7 +46,7 @@ export type SqlDriverAdapterFactory = {
 
 const TEXT_COLUMN_TYPE = 7; // ColumnTypeEnum.Text w typach Prisma
 
-function mapResult(result: { rows: Array<any>; fields: Array<{ name: string }>; rowCount?: number }): SqlResultSet {
+function mapResult(result: QueryResult): SqlResultSet {
   const columnNames = result.fields.map((field) => field.name); // nazwy kolumn
   const columnTypes = result.fields.map(() => TEXT_COLUMN_TYPE); // brak mapowania typow -> tekst
   const rows = result.rows.map((row) => columnNames.map((name) => row[name])); // wypelnij wartosci
@@ -115,7 +116,9 @@ class PgAdapter implements SqlDriverAdapter {
   }
 }
 
-export function createPgAdapterFactory(databaseUrl?: string): SqlDriverAdapterFactory {
+export function createPgAdapterFactory(
+  databaseUrl?: string,
+): SqlDriverAdapterFactory {
   const pool = new Pool({
     connectionString: databaseUrl, // URL polaczenia
   });
@@ -123,8 +126,8 @@ export function createPgAdapterFactory(databaseUrl?: string): SqlDriverAdapterFa
   return {
     provider: 'postgres',
     adapterName: 'custom-pg',
-    async connect(): Promise<SqlDriverAdapter> {
-      return new PgAdapter(pool); // zwroc adapter dla Prisma
+    connect(): Promise<SqlDriverAdapter> {
+      return Promise.resolve(new PgAdapter(pool)); // zwroc adapter dla Prisma
     },
   };
 }

@@ -1,69 +1,31 @@
-import { Board } from "./board"; // reprezentacja planszy z kafelkami
-import { HexCoords, HexTile } from "./hex.types"; // typy pomocnicze dla heksow
+import { Board } from './board'; // reprezentacja planszy z kafelkami
+import { HexCoords, HexTile } from './hex.types'; // typy pomocnicze dla heksow
 
-
-export function countMovement(positionHexCoords: HexCoords, targetHexCoords: HexCoords, board: Board) {
+export function countMovement(
+  positionHexCoords: HexCoords,
+  targetHexCoords: HexCoords,
+) {
   const distanceQ = positionHexCoords.q - targetHexCoords.q; // roznica w osi q
   const distanceR = positionHexCoords.r - targetHexCoords.r; // roznica w osi r
-  const distanceS = -(positionHexCoords.q + positionHexCoords.r) + (targetHexCoords.q + targetHexCoords.r); // os s wynikajaca z axial
+  const distanceS =
+    -(positionHexCoords.q + positionHexCoords.r) +
+    (targetHexCoords.q + targetHexCoords.r); // os s wynikajaca z axial
   return (Math.abs(distanceQ) + Math.abs(distanceR) + Math.abs(distanceS)) / 2; // dystans heksowy (cube coords)
 }
 
-
-
-export function countRoad(positionHexTile: HexTile, targetHexTile: HexTile, board: Board){
-
-  let movementCost = 0; // akumulacja kosztu ruchu
-  let road: HexTile[]= []; // zapis trasy
-
-  while(positionHexTile.coords.q !== targetHexTile.coords.q &&
-        positionHexTile.coords.r !== targetHexTile.coords.r
-   ) { // iteruj az dojdziemy do celu
-    let direction: number[] | undefined = determineDirection(positionHexTile, targetHexTile, board) // wyznacz kierunek krokow
-    if(direction !== undefined){
-      let newHexCoords: HexCoords = {
-        q: positionHexTile.coords.q + direction[0], // przesuniecie w osi q
-        r: positionHexTile.coords.r + direction[1] // przesuniecie w osi r
-      }
-      let newPosition: HexTile | undefined = board.tiles.find(tile => tile.coords == newHexCoords) // znajdz kafelek
-      if (newPosition !== undefined) road.push(newPosition) // dolacz do sciezki
-      movementCost =+ 1; // zwieksz koszt o krok
-    }
-
-   }
-
-}
-
-function determineDirection(positionHexTile: HexTile, targetHexTile: HexTile, board: Board): number[] | undefined{
-
-  if (positionHexTile.coords.q - targetHexTile.coords.q < 0 ) return [1,0] // cel bardziej na wschod
-  if (positionHexTile.coords.q - targetHexTile.coords.q > 0 ) return [-1,0] // cel bardziej na zachod
-  if (positionHexTile.coords.q - targetHexTile.coords.q === 0 ) { // ta sama kolumna q
-    if(positionHexTile.coords.r - targetHexTile.coords.r < 0) return [0,1] // cel nizej w r
-    if(positionHexTile.coords.r - targetHexTile.coords.r > 0) return [0,-1] // cel wyzej w r
-    if(positionHexTile.coords.r - targetHexTile.coords.r === 0) return [0,0] // juz na miejscu
-
-  return undefined // brak kierunku (teoretycznie nieosiagalne)
-  }
-
-
-
-};
 export type Road = {
   movementCost: number; // suma kosztow ruchu
   road: HexTile[]; // kolejne kafelki trasy
-
-
 };
 export type TileWithCostReach = {
   tile: HexTile; // kafelek
   cost: number; // koszt dojscia do kafelka
   visited: boolean; // czy juz przetworzony
-}
+};
 export function roadByDijkstra(
   positionHexTile: HexTile,
   targetHexTile: HexTile,
-  board: Board
+  board: Board,
 ): Road | undefined {
   const tilesToCheck: TileWithCostReach[] = []; // kolejka priorytetowa (ręczna)
   const closed: HexTile[] = []; // zamkniete wezly
@@ -81,9 +43,9 @@ export function roadByDijkstra(
   const same = (a: HexTile, b: HexTile) =>
     a.coords.q === b.coords.q && a.coords.r === b.coords.r; // pomocnicze porownanie koordow
 
-  const inList = (arr: HexTile[], t: HexTile) => arr.some(x => same(x, t)); // sprawdz czy element jest na liscie
+  const inList = (arr: HexTile[], t: HexTile) => arr.some((x) => same(x, t)); // sprawdz czy element jest na liscie
 
-  const getPrevEntry = (t: HexTile) => cameFrom.find(e => same(e.tile, t)); // znajdz wejscie poprzednika
+  const getPrevEntry = (t: HexTile) => cameFrom.find((e) => same(e.tile, t)); // znajdz wejscie poprzednika
 
   while (tilesToCheck.length !== 0) {
     let currentIndex = 0; // indeks kafla o najnizszym koszcie
@@ -115,7 +77,7 @@ export function roadByDijkstra(
 
       const tentative = current.cost + n.movementCost; // koszt przejscia do sasiada
 
-      const existing = tilesToCheck.find(x => same(x.tile, n));
+      const existing = tilesToCheck.find((x) => same(x.tile, n));
       if (!existing) {
         tilesToCheck.push({ tile: n, cost: tentative, visited: false }); // dodaj nowy sasiad
         cameFrom.push({ tile: n, prev: current.tile }); // zapisz poprzednika
@@ -132,14 +94,19 @@ export function roadByDijkstra(
 
 function getNeighbors(tile: HexTile, board: Board): HexTile[] {
   const dirs = [
-    { q: 1, r: 0 },  { q: -1, r: 0 },
-    { q: 0, r: 1 },  { q: 0, r: -1 },
+    { q: 1, r: 0 },
+    { q: -1, r: 0 },
+    { q: 0, r: 1 },
+    { q: 0, r: -1 },
   ]; // dozwolone ruchy (brak skosow)
   return dirs
-    .map(({ q, r }) =>
-      board.tiles.find(
-        t => t.coords.q === tile.coords.q + q && t.coords.r === tile.coords.r + r,
-      ), // znajdz kafelki w sasiedztwie
+    .map(
+      ({ q, r }) =>
+        board.tiles.find(
+          (t) =>
+            t.coords.q === tile.coords.q + q &&
+            t.coords.r === tile.coords.r + r,
+        ), // znajdz kafelki w sasiedztwie
     )
     .filter((t): t is HexTile => !!t && t.passable); // zwroc tylko istniejace i przechodnie
 }

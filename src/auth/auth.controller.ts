@@ -20,7 +20,7 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Get('me')
-  me(@Req() req: any) {
+  me(@Req() req: { user: { userId: number } }) {
     return this.authService.me(req.user.userId); // zwraca dane biezacego usera
   }
 
