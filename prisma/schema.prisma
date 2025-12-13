@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  schemas  = ["BoardWar"]
+  schemas  = ["boardwar"]
 }
 
 enum TerrainType {
@@ -18,7 +18,7 @@ enum TerrainType {
   bridge
   ford
 
-  @@schema("BoardWar")
+  @@schema("boardwar")
 }
 
 enum UnitName {
@@ -32,7 +32,7 @@ enum UnitName {
   six_pounder_cannon
   howitzer_cannon
 
-  @@schema("BoardWar")
+  @@schema("boardwar")
 }
 
 enum GamePhase {
@@ -41,7 +41,7 @@ enum GamePhase {
   battle
   finished
 
-  @@schema("BoardWar")
+  @@schema("boardwar")
 }
 
 enum GameStatus {
@@ -50,7 +50,7 @@ enum GameStatus {
   finished
   paused
 
-  @@schema("BoardWar")
+  @@schema("boardwar")
 }
 
 enum GameActionType {
@@ -58,7 +58,7 @@ enum GameActionType {
   ATTACK
   END_TURN
 
-  @@schema("BoardWar")
+  @@schema("boardwar")
 }
 
 enum SnapshotKind {
@@ -66,7 +66,7 @@ enum SnapshotKind {
   before_action
   after_action
 
-  @@schema("BoardWar")
+  @@schema("boardwar")
 }
 
 enum BattleResult {
@@ -74,7 +74,7 @@ enum BattleResult {
   lose
   draw
 
-  @@schema("BoardWar")
+  @@schema("boardwar")
 }
 
 model User {
@@ -87,7 +87,7 @@ model User {
   player Player @relation(fields: [id], references: [id])
   battles UserBattle[]
 
-  @@schema("BoardWar")
+  @@schema("boardwar")
 }
 
 model Player {
@@ -107,7 +107,7 @@ model Player {
 
   user User?
 
-  @@schema("BoardWar")
+  @@schema("boardwar")
 }
 
 model Game {
@@ -133,7 +133,7 @@ model Game {
   actions GameAction[]
   snapshots GameStateSnapshot[]
 
-  @@schema("BoardWar")
+  @@schema("boardwar")
 }
 
 model Board {
@@ -147,7 +147,7 @@ model Board {
 
   tiles Tile[]
 
-  @@schema("BoardWar")
+  @@schema("boardwar")
 }
 
 model Tile {
@@ -164,7 +164,7 @@ model Tile {
   board   Board @relation(fields: [boardId], references: [id])
 
   @@unique([boardId, q, r]) // jeden kafel na wspƈ�'rz�tdne
-  @@schema("BoardWar")
+  @@schema("boardwar")
 }
 
 model Unit {
@@ -197,7 +197,7 @@ model Unit {
 
   @@index([playerId])
   @@index([gameId])
-  @@schema("BoardWar")
+  @@schema("boardwar")
 }
 
 model GameAction {
@@ -213,7 +213,7 @@ model GameAction {
   rngRolls    Json?
   createdAt  DateTime       @default(now())
 
-  @@schema("BoardWar")
+  @@schema("boardwar")
 }
 
 model UserBattle {
@@ -229,7 +229,7 @@ model UserBattle {
   user User @relation(fields: [userId], references: [id])
 
   @@index([userId, createdAt])
-  @@schema("BoardWar")
+  @@schema("boardwar")
 }
 
 model GameStateSnapshot {
@@ -246,7 +246,7 @@ model GameStateSnapshot {
   createdAt       DateTime      @default(now())
 
   @@index([gameId, turnNumber, kind])
-  @@schema("BoardWar")
+  @@schema("boardwar")
 }
 
 
