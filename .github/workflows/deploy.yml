@@ -1,3 +1,4 @@
+
 name: Deploy (server)
 
 on:
@@ -13,7 +14,7 @@ concurrency:
 jobs:
   deploy:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    runs-on: [self-hosted, linux, z159-backend, backend, z159]
+    runs-on: [self-hosted, z159-backend]
 
     steps:
       - name: Checkout repository
@@ -24,3 +25,4 @@ jobs:
         run: |
           set -euo pipefail
           /home/deploy/deploy_backend.sh
+
