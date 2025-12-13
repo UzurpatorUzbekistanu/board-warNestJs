@@ -30,7 +30,13 @@ const directions: HexCoords[] = [
 const coordKey = (q: number, r: number) => `${q},${r}`; // klucz mapy heksow
 const tileMap = new Map<string, HexTile>(); // magazyn wszystkich pol
 
-function setTile(q: number, r: number, terrain: TerrainType, passable: boolean, movementCost: number) {
+function setTile(
+  q: number,
+  r: number,
+  terrain: TerrainType,
+  passable: boolean,
+  movementCost: number,
+) {
   const key = coordKey(q, r); // identyfikator pola
   const tile = tileMap.get(key); // pobierz obiekt kafelka
   if (!tile) return; // ignoruj poza zakresem
@@ -41,8 +47,10 @@ function setTile(q: number, r: number, terrain: TerrainType, passable: boolean, 
 
 function neighbors(q: number, r: number): HexCoords[] {
   return directions
-    .map(d => ({ q: q + d.q, r: r + d.r })) // przesuniecie w kazdym kierunku
-    .filter(c => c.q >= 0 && c.q < BOARD_WIDTH && c.r >= 0 && c.r < BOARD_HEIGHT); // tylko w obrebie planszy
+    .map((d) => ({ q: q + d.q, r: r + d.r })) // przesuniecie w kazdym kierunku
+    .filter(
+      (c) => c.q >= 0 && c.q < BOARD_WIDTH && c.r >= 0 && c.r < BOARD_HEIGHT,
+    ); // tylko w obrebie planszy
 }
 
 function initBase() {
@@ -99,11 +107,15 @@ function carveRiver(): HexCoords[] {
 }
 
 function connectLakeToRiver(lakeCenter: HexCoords, riverPath: HexCoords[]) {
-  const nearestRiver = riverPath.reduce((best, curr) => {
-    const dist = Math.abs(curr.q - lakeCenter.q) + Math.abs(curr.r - lakeCenter.r); // dystans taksowkowy
-    if (best === null) return { coord: curr, dist };
-    return dist < best.dist ? { coord: curr, dist } : best; // wybieramy najblizszy punkt rzeki
-  }, null as { coord: HexCoords; dist: number } | null);
+  const nearestRiver = riverPath.reduce(
+    (best, curr) => {
+      const dist =
+        Math.abs(curr.q - lakeCenter.q) + Math.abs(curr.r - lakeCenter.r); // dystans taksowkowy
+      if (best === null) return { coord: curr, dist };
+      return dist < best.dist ? { coord: curr, dist } : best; // wybieramy najblizszy punkt rzeki
+    },
+    null as { coord: HexCoords; dist: number } | null,
+  );
 
   if (!nearestRiver) return; // brak rzeki do polaczenia
 
@@ -134,7 +146,9 @@ function seedCluster(
   for (let i = 0; i < seeds; i++) {
     const q = 2 + Math.floor(rng() * (BOARD_WIDTH - 4)); // start w bezpiecznym od brzegu obszarze
     const r = 2 + Math.floor(rng() * (BOARD_HEIGHT - 4));
-    const frontier: { q: number; r: number; depth: number }[] = [{ q, r, depth: 0 }]; // stos dla DFS
+    const frontier: { q: number; r: number; depth: number }[] = [
+      { q, r, depth: 0 },
+    ]; // stos dla DFS
 
     while (frontier.length) {
       const cur = frontier.pop()!; // pobierz nastepny heks
@@ -150,7 +164,9 @@ function seedCluster(
 }
 
 function addSwampsNearWater(probability: number) {
-  const waterTiles = Array.from(tileMap.values()).filter(t => t.terrain === TerrainType.Water); // znajdz wode
+  const waterTiles = Array.from(tileMap.values()).filter(
+    (t) => t.terrain === TerrainType.Water,
+  ); // znajdz wode
   for (const wt of waterTiles) {
     for (const n of neighbors(wt.coords.q, wt.coords.r)) {
       if (rng() < probability) {
@@ -162,7 +178,7 @@ function addSwampsNearWater(probability: number) {
 
 function addFords(count: number) {
   const candidates = Array.from(tileMap.values()).filter(
-    t =>
+    (t) =>
       t.terrain === TerrainType.Water && // tylko woda
       t.coords.q > 0 &&
       t.coords.q < BOARD_WIDTH - 1 &&
@@ -205,7 +221,9 @@ function carveWindingRoad(from: HexCoords, to: HexCoords, wiggle = 0.25) {
 
     options.sort(
       (a, b) =>
-        Math.abs(a.q - to.q) + Math.abs(a.r - to.r) - (Math.abs(b.q - to.q) + Math.abs(b.r - to.r)),
+        Math.abs(a.q - to.q) +
+        Math.abs(a.r - to.r) -
+        (Math.abs(b.q - to.q) + Math.abs(b.r - to.r)),
     ); // wybierz opcje najblizsza celowi
 
     const next = options[0];
@@ -244,7 +262,11 @@ function carveWindingRoad(from: HexCoords, to: HexCoords, wiggle = 0.25) {
 }
 
 initBase(); // wypelnij plansze bazowa rownina
-const lakeCenter = addLake(Math.floor(BOARD_WIDTH * 0.2), Math.floor(BOARD_HEIGHT * 0.7), 2 + Math.floor(rng() * 2)); // jezioro w dolnej lewej cwierci
+const lakeCenter = addLake(
+  Math.floor(BOARD_WIDTH * 0.2),
+  Math.floor(BOARD_HEIGHT * 0.7),
+  2 + Math.floor(rng() * 2),
+); // jezioro w dolnej lewej cwierci
 const riverPath = carveRiver(); // generuj rzeke z lewej do prawej
 connectLakeToRiver(lakeCenter, riverPath); // polacz jezioro z rzeka kanalem
 addFords(10); // dodaj brody na rzece
@@ -266,8 +288,16 @@ carveWindingRoad(citySpots[0], citySpots[1], 0.45); // drogi laczace miasta
 carveWindingRoad(citySpots[0], citySpots[2], 0.4);
 carveWindingRoad(citySpots[0], citySpots[3], 0.35);
 carveWindingRoad(citySpots[1], citySpots[2], 0.3);
-carveWindingRoad(citySpots[2], { q: BOARD_WIDTH - 2, r: Math.floor(BOARD_HEIGHT / 2) }, 0.35);
-carveWindingRoad(citySpots[0], { q: BOARD_WIDTH - 1, r: BOARD_HEIGHT - 1 }, 0.2); // droga na skraj mapy
+carveWindingRoad(
+  citySpots[2],
+  { q: BOARD_WIDTH - 2, r: Math.floor(BOARD_HEIGHT / 2) },
+  0.35,
+);
+carveWindingRoad(
+  citySpots[0],
+  { q: BOARD_WIDTH - 1, r: BOARD_HEIGHT - 1 },
+  0.2,
+); // droga na skraj mapy
 
 const tiles: HexTile[] = Array.from(tileMap.values()); // zbierz kafelki w tablice
 

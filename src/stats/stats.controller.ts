@@ -9,12 +9,15 @@ export class StatsController {
   constructor(private readonly statsService: StatsService) {} // DI serwisu
 
   @Post('record')
-  record(@Req() req: any, @Body() dto: RecordBattleDto) {
+  record(
+    @Req() req: { user: { userId: number } },
+    @Body() dto: RecordBattleDto,
+  ) {
     return this.statsService.recordBattle(req.user.userId, dto); // zapisz wynik bitwy
   }
 
   @Get()
-  getStats(@Req() req: any) {
+  getStats(@Req() req: { user: { userId: number } }) {
     return this.statsService.getUserStats(req.user.userId); // zwroc statystyki usera
   }
 }

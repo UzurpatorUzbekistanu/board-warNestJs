@@ -1,11 +1,16 @@
 // board.controller.ts
-import { BadRequestException, Body, Controller, Get, Post } from '@nestjs/common'; // nest kontroler i walidacja bledow
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Post,
+} from '@nestjs/common'; // nest kontroler i walidacja bledow
 import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger'; // dekoratory swagger
 import { IsNumber, IsObject, ValidateNested } from 'class-validator'; // walidacja DTO
 import { Type } from 'class-transformer'; // transformacja z requestu
 import { BoardService } from './board.service'; // logika planszy
 import { HexCoords } from './domain/hex.types'; // typ koordow
-import { countMovement } from './domain/hex.utils'; // funkcje pomocnicze (nieuzyte tutaj)
 
 class HexCoordsDto implements HexCoords {
   @IsNumber() q!: number; // wspolrzedna q
@@ -13,10 +18,14 @@ class HexCoordsDto implements HexCoords {
 }
 
 class MoveUnitDto {
-  @ValidateNested() @Type(() => HexCoordsDto) @IsObject()
+  @ValidateNested()
+  @Type(() => HexCoordsDto)
+  @IsObject()
   currentPosition!: HexCoordsDto; // pole startowe jednostki
 
-  @ValidateNested() @Type(() => HexCoordsDto) @IsObject()
+  @ValidateNested()
+  @Type(() => HexCoordsDto)
+  @IsObject()
   targetCoords!: HexCoordsDto; // pole docelowe
 }
 
@@ -36,9 +45,14 @@ export class BoardController {
   @ApiBody({ type: MoveUnitDto })
   moveUnit(@Body() body: MoveUnitDto) {
     if (!body?.currentPosition || !body?.targetCoords) {
-      throw new BadRequestException('currentPosition and targetCoords are required'); // brak danych
+      throw new BadRequestException(
+        'currentPosition and targetCoords are required',
+      ); // brak danych
     }
 
-    return this.boardService.countDistanceBetweenTwoTilles(body.currentPosition, body.targetCoords); // zwroc trase i koszt
+    return this.boardService.countDistanceBetweenTwoTilles(
+      body.currentPosition,
+      body.targetCoords,
+    ); // zwroc trase i koszt
   }
 }
