@@ -29,7 +29,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const trace = (exception as Error)?.stack; // stos bledu
 
     this.logger.error(
-      typeof responseBody === 'string' ? responseBody : JSON.stringify(responseBody), // wiadomosc
+      typeof responseBody === 'string'
+        ? responseBody
+        : JSON.stringify(responseBody), // wiadomosc
       trace, // stos
       `${request.method} ${request.url}`, // kontekst zapytania
     );

@@ -1,6 +1,6 @@
 import { Player } from 'src/player/domain/player'; // model gracza
 import { HexTile } from 'src/board/domain/hex.types'; // kafelki planszy
-import { Unit, UnitName } from 'src/units/domain/unit.types'; // typy jednostek
+import { UnitName } from 'src/units/domain/unit.types'; // typy jednostek
 
 export type GameStatus = 'not_started' | 'in_progress' | 'finished' | 'paused'; // status gry
 

@@ -12,7 +12,9 @@ import { JwtStrategy } from './jwt.strategy'; // strategia walidacji tokenu
     PassportModule, // rejestracja strategii passport
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'change-me', // klucz JWT
-      signOptions: { expiresIn: process.env.JWT_EXPIRES_IN ?? '1d' } as JwtSignOptions, // TTL tokenu
+      signOptions: {
+        expiresIn: process.env.JWT_EXPIRES_IN ?? '1d',
+      } as JwtSignOptions, // TTL tokenu
     }),
   ],
   controllers: [AuthController], // rejestracja kontrolera
