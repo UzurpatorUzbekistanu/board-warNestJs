@@ -13,7 +13,7 @@ concurrency:
 jobs:
   deploy:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    runs-on: [self-hosted, z159-backend]
+    runs-on: [self-hosted, linux, z159-backend, backend, z159]
 
     steps:
       - name: Checkout repository
