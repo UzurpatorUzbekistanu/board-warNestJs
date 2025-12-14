@@ -13,11 +13,11 @@ import { Unit } from 'src/units/domain/unit.types'; // typ jednostki
 import { UnitsService } from 'src/units/units.service'; // serwis jednostek
 import { Player } from 'src/player/domain/player'; // model gracza
 import { Board } from 'src/board/domain/board'; // model planszy
-import { HexCoords } from 'src/board/domain/hex.types'; // koordy heksowe
+import { SquareCoords } from 'src/board/domain/square.types'; // koordy na planszy
 import { PrismaService } from 'src/prisma/prisma.service'; // klient bazy
 import {
   GameState,
-  HexTileState,
+  SquareTileState,
   PlayerInGameState,
   UnitOnBoardState,
 } from './model/game-state'; // struktury stanu gry
@@ -35,6 +35,8 @@ export class GameService {
     private readonly prisma: PrismaService,
   ) {}
 
+  // Tworzy lokalna gre solo w pamieci (bez bazy): dobiera przeciwnika,
+  // buduje pusta armie i plansze, ustawia faze na deployment.
   async createSoloGame(dto: CreateSoloGameDto): Promise<Game> {
     const player = await this.playerService.findById(dto.playerId);
     if (!player) throw new Error("Player doesn't exist");
@@ -55,6 +57,7 @@ export class GameService {
     return game;
   }
 
+  // Fabryka bazowego obiektu Game; nie dotyka bazy i nie waliduje danych.
   private createGame(
     player: Player,
     playerArmy: Unit[],
@@ -79,8 +82,9 @@ export class GameService {
   setUnitPosition(
     gameId: number,
     unitUniqueId: number,
-    coords: HexCoords,
+    coords: SquareCoords,
   ): Game | undefined {
+    // Lokalny mechanizm deploymentu: pilnuje, czy pole jest wolne i ustawia pozycje jednostki.
     const game: Game = this.findById(gameId);
     let unit = game.playerArmy.find((u) => u.uniqueId === unitUniqueId);
     if (!unit) {
@@ -105,7 +109,7 @@ export class GameService {
     return game[0];
   }
 
-  isOccupied(units: Unit[], coords: HexCoords): boolean {
+  isOccupied(units: Unit[], coords: SquareCoords): boolean {
     return units.some(
       (u) =>
         u.position?.q != null &&
@@ -116,6 +120,7 @@ export class GameService {
   }
 
   finishDeployment(gameId: number): Game | undefined {
+    // Zmienia faze z deployment na battle tylko jesli obie armie maja ustawione pozycje.
     const game: Game = this.findById(gameId);
 
     const isGameInDeployment: boolean =
@@ -141,8 +146,9 @@ export class GameService {
   async moveUnit(
     gameId: number,
     unitUniqueId: number,
-    targetCoords: HexCoords,
-  ): Promise<HexCoords | undefined> {
+    targetCoords: SquareCoords,
+  ): Promise<SquareCoords | undefined> {
+    // Wersja MVP ruchu: sprawdza przechodnosc pola i obecnosc jednostki, nie liczy kosztu ruchu.
     const game: Game = this.findById(gameId);
     const isPassable = game.board.tiles.find(
       (coords) => coords.coords == targetCoords,
@@ -159,6 +165,8 @@ export class GameService {
     return targetCoords;
   }
 
+  // Tworzy gre solo w pelnym trybie stanowym: resetuje statystyki,
+  // zapisuje rekord Game, stan poczatkowy i pierwszy snapshot w bazie.
   async createStatefulSoloGame(dto: CreateSoloGameDto): Promise<GameState> {
     const player = await this.playerService.findById(dto.playerId);
     if (!player) throw new NotFoundException("Player doesn't exist");
@@ -208,6 +216,7 @@ export class GameService {
     return stateWithId;
   }
 
+  // Odczytuje aktualny stan gry z bazy; rzuca 404, gdy brak rekordu lub stateJson.
   async getGameState(gameId: number): Promise<GameState> {
     const game = await this.prisma.game.findUnique({
       where: { id: gameId },
@@ -224,6 +233,8 @@ export class GameService {
     gameId: number,
     actionDto: ApplyActionDto,
   ): Promise<GameState> {
+    // Gorny orkiestrator akcji: pobiera stan, liczy nowy, loguje akcje,
+    // utrwala oba snapshoty i aktualizuje status w jednej transakcji.
     // Pobierz aktualny stan gry z bazy.
     const currentState = await this.getGameState(gameId);
     // Zrób głęboką kopię stanu na potrzeby logów/snapshotów.
@@ -280,6 +291,7 @@ export class GameService {
     currentState: GameState,
     actionDto: ApplyActionDto,
   ): GameState {
+    // Pure reducer: bazuje tylko na podanym stanie/akcji, nie korzysta z bazy ani serwisow.
     // Budujemy kolejny stan: kopiujemy dane, podbijamy status i klonujemy list? jednostek.
     const nextState: GameState = {
       ...currentState,
@@ -335,6 +347,8 @@ export class GameService {
 
     return nextState;
   }
+
+  // Awansuje status z not_started do in_progress; stany finished/paused zostaja nietkniete.
   private bumpStatus(status: GameState['status']): GameState['status'] {
     if (status === 'finished' || status === 'paused') {
       return status;
@@ -346,6 +360,7 @@ export class GameService {
     players: PlayerInGameState[],
     currentPlayerId: number,
   ): number {
+    // Round-robin po identyfikatorach graczy; gdy nie znajdzie obecnego, zaczyna od indeksu 0.
     if (!players.length) return currentPlayerId;
     const currentIdx = players.findIndex((p) => p.playerId === currentPlayerId);
     const nextIdx = currentIdx === -1 ? 0 : (currentIdx + 1) % players.length;
@@ -360,6 +375,7 @@ export class GameService {
     enemyArmy: Unit[],
     board: Board,
   ): GameState {
+    // Konsoliduje dane z domeny do GameState: graczy, jednostki (z aktualnym HP) i kafelki planszy.
     const playersState: PlayerInGameState[] = [
       { playerId: player.id, name: player.name, color: player.color },
       { playerId: enemy.id, name: enemy.name, color: enemy.color },
@@ -381,6 +397,7 @@ export class GameService {
   }
 
   private toUnitState(unit: Unit): UnitOnBoardState {
+    // Buduje zapis jednostki do stanu planszy; HP bierze z serwisu (moze byc zmienione w trakcie gry).
     const hp = this.unitService.getCurrentHp(unit.uniqueId) ?? unit.maxHp;
     return {
       unitId: unit.uniqueId.toString(),
@@ -392,7 +409,7 @@ export class GameService {
     };
   }
 
-  private toTilesState(board: Board): HexTileState[] {
+  private toTilesState(board: Board): SquareTileState[] {
     return board.tiles.map((tile) => ({
       q: tile.coords.q,
       r: tile.coords.r,
@@ -403,6 +420,7 @@ export class GameService {
   }
 
   private async resolveEnemy(player: Player): Promise<Player> {
+    // Zapewnia istnienie przeciwnika: preferuje istniejącego ID=1, w razie kolizji tworzy nowego.
     const colorEnemy = player.color === 'red' ? 'blue' : 'red';
     let enemy = await this.playerService.findById(1);
 
@@ -415,6 +433,7 @@ export class GameService {
   }
 
   async getTrajectory(gameId: number) {
+    // Zwraca pelny log rozgrywki: akcje i snapshoty uporzadkowane chronologicznie.
     // Pobierz uporządkowane akcje i snapshoty w jednej transakcji, aby móc odtworzyć historię gry.
     const [actions, snapshots] = await this.prisma.$transaction([
       // Lista akcji z danej gry, rosnąco po czasie utworzenia.

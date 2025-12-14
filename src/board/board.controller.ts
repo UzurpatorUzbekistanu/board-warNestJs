@@ -10,23 +10,23 @@ import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger'; // dekorat
 import { IsNumber, IsObject, ValidateNested } from 'class-validator'; // walidacja DTO
 import { Type } from 'class-transformer'; // transformacja z requestu
 import { BoardService } from './board.service'; // logika planszy
-import { HexCoords } from './domain/hex.types'; // typ koordow
+import { SquareCoords } from './domain/square.types'; // typ koordow
 
-class HexCoordsDto implements HexCoords {
+class SquareCoordsDto implements SquareCoords {
   @IsNumber() q!: number; // wspolrzedna q
   @IsNumber() r!: number; // wspolrzedna r
 }
 
 class MoveUnitDto {
   @ValidateNested()
-  @Type(() => HexCoordsDto)
+  @Type(() => SquareCoordsDto)
   @IsObject()
-  currentPosition!: HexCoordsDto; // pole startowe jednostki
+  currentPosition!: SquareCoordsDto; // pole startowe jednostki
 
   @ValidateNested()
-  @Type(() => HexCoordsDto)
+  @Type(() => SquareCoordsDto)
   @IsObject()
-  targetCoords!: HexCoordsDto; // pole docelowe
+  targetCoords!: SquareCoordsDto; // pole docelowe
 }
 
 @Controller('board')

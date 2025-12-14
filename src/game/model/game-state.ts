@@ -1,5 +1,5 @@
 import { Player } from 'src/player/domain/player'; // model gracza
-import { HexTile } from 'src/board/domain/hex.types'; // kafelki planszy
+import { SquareTile } from 'src/board/domain/square.types'; // kafelki planszy
 import { UnitName } from 'src/units/domain/unit.types'; // typy jednostek
 
 export type GameStatus = 'not_started' | 'in_progress' | 'finished' | 'paused'; // status gry
@@ -11,7 +11,7 @@ export interface GameState {
   status: GameStatus; // status gry
   players: PlayerInGameState[]; // gracze w grze
   units: UnitOnBoardState[]; // jednostki na planszy
-  tiles: HexTileState[]; // kafle planszy
+  tiles: SquareTileState[]; // kafle planszy
 }
 
 export interface PlayerInGameState {
@@ -29,10 +29,10 @@ export interface UnitOnBoardState {
   r: number; // pozycja r
 }
 
-export interface HexTileState {
+export interface SquareTileState {
   q: number; // wspolrzedna q
   r: number; // wspolrzedna r
-  terrain: HexTile['terrain']; // rodzaj terenu
+  terrain: SquareTile['terrain']; // rodzaj terenu
   passable: boolean; // czy przechodnie
   movementCost: number; // koszt ruchu
 }

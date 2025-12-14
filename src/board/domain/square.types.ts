@@ -1,8 +1,8 @@
 import { Unit } from 'src/units/domain/unit.types'; // definicja jednostki umieszczonej na polu
 
-type axialCoords = {
-  q: number; // wspolrzedna q w axial
-  r: number; // wspolrzedna r w axial
+type gridCoords = {
+  q: number; // wspolrzedna pozioma
+  r: number; // wspolrzedna pionowa
 };
 
 export enum TerrainType {
@@ -17,10 +17,10 @@ export enum TerrainType {
   Ford = 'ford', // brod
 }
 
-export type HexCoords = axialCoords; // alias na koordy axial
+export type SquareCoords = gridCoords; // alias na koordy siatki planszy
 
-export interface HexTile {
-  coords: HexCoords; // polozenie na planszy
+export interface SquareTile {
+  coords: SquareCoords; // polozenie na planszy
   terrain: TerrainType; // typ terenu
   passable: boolean; // czy mozna przejsc/przejechac
   movementCost: number; // koszt ruchu przez pole
