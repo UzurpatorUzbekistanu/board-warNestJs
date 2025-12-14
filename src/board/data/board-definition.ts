@@ -1,9 +1,9 @@
 // src/board/data/board-definition.ts
-import { HexCoords, HexTile, TerrainType } from '../domain/hex.types'; // typy i enumy heksow
+import { SquareCoords, SquareTile, TerrainType } from '../domain/square.types'; // typy i enumy pol planszy kwadratowej
 import GameBoard from '../domain/board'; // kontrakt na plansze gry
 
-const BOARD_WIDTH = 30; // szerokosc planszy w heksach
-const BOARD_HEIGHT = 30; // wysokosc planszy w heksach
+const BOARD_WIDTH = 30; // szerokosc planszy (pola kwadratowe)
+const BOARD_HEIGHT = 30; // wysokosc planszy (pola kwadratowe)
 const SEED = 12345; // deterministyczne rozmieszczenie mapy; zmien seed dla innego ukladu
 
 type Rng = () => number; // alias na prosty generator liczb pseudolosowych
@@ -18,17 +18,15 @@ function createRng(seed: number): Rng {
 
 const rng = createRng(SEED); // globalny RNG do budowania mapy
 
-const directions: HexCoords[] = [
+const directions: SquareCoords[] = [
   { q: 1, r: 0 }, // wschod
-  { q: 1, r: -1 }, // polnocny wschod
-  { q: 0, r: -1 }, // polnoc
   { q: -1, r: 0 }, // zachod
-  { q: -1, r: 1 }, // poludniowy zachod
+  { q: 0, r: -1 }, // polnoc
   { q: 0, r: 1 }, // poludnie
-]; // sasiedzi heksa w axial coords
+]; // sasiedzi pola na kwadratowej siatce
 
-const coordKey = (q: number, r: number) => `${q},${r}`; // klucz mapy heksow
-const tileMap = new Map<string, HexTile>(); // magazyn wszystkich pol
+const coordKey = (q: number, r: number) => `${q},${r}`; // klucz mapy pol
+const tileMap = new Map<string, SquareTile>(); // magazyn wszystkich pol
 
 function setTile(
   q: number,
@@ -45,7 +43,7 @@ function setTile(
   tile.movementCost = movementCost; // koszt ruchu (nizszy = szybciej)
 }
 
-function neighbors(q: number, r: number): HexCoords[] {
+function neighbors(q: number, r: number): SquareCoords[] {
   return directions
     .map((d) => ({ q: q + d.q, r: r + d.r })) // przesuniecie w kazdym kierunku
     .filter(
@@ -57,7 +55,7 @@ function initBase() {
   for (let q = 0; q < BOARD_WIDTH; q++) {
     for (let r = 0; r < BOARD_HEIGHT; r++) {
       tileMap.set(coordKey(q, r), {
-        coords: { q, r }, // zapis axial
+        coords: { q, r }, // zapis wspolrzednych siatki
         terrain: TerrainType.Plain, // domyslnie rownina
         passable: true, // przechodzenie dozwolone
         movementCost: 1, // bazowy koszt ruchu
@@ -66,11 +64,15 @@ function initBase() {
   }
 }
 
-function addLake(centerQ: number, centerR: number, radius: number): HexCoords {
+function addLake(
+  centerQ: number,
+  centerR: number,
+  radius: number,
+): SquareCoords {
   for (let q = centerQ - radius; q <= centerQ + radius; q++) {
     for (let r = centerR - radius; r <= centerR + radius; r++) {
       if (q < 0 || q >= BOARD_WIDTH || r < 0 || r >= BOARD_HEIGHT) continue; // omijamy poza plansza
-      const dist = Math.abs(centerQ - q) + Math.abs(centerR - r); // prosty dystans Manhattan w axial
+      const dist = Math.abs(centerQ - q) + Math.abs(centerR - r); // prosty dystans Manhattan na siatce
       if (dist <= radius * 2) {
         setTile(q, r, TerrainType.Water, false, 99); // jezioro: nieprzechodnie, ogromny koszt
       }
@@ -79,11 +81,11 @@ function addLake(centerQ: number, centerR: number, radius: number): HexCoords {
   return { q: centerQ, r: centerR }; // zwroc srodek jeziora
 }
 
-function carveRiver(): HexCoords[] {
+function carveRiver(): SquareCoords[] {
   let q = 0; // start z lewej krawedzi
   let r = Math.floor(BOARD_HEIGHT * 0.2 + rng() * BOARD_HEIGHT * 0.6); // losowa wysokosc w srodkowym pasie
   const maxSteps = BOARD_WIDTH * 3; // limit krokow, by uniknac zapetlenia
-  const path: HexCoords[] = []; // zapis trasy rzeki
+  const path: SquareCoords[] = []; // zapis trasy rzeki
 
   for (let step = 0; step < maxSteps && q < BOARD_WIDTH; step++) {
     setTile(q, r, TerrainType.Water, false, 99); // koryto rzeki jest nieprzechodnie
@@ -106,7 +108,10 @@ function carveRiver(): HexCoords[] {
   return path; // pelna sciezka rzeki
 }
 
-function connectLakeToRiver(lakeCenter: HexCoords, riverPath: HexCoords[]) {
+function connectLakeToRiver(
+  lakeCenter: SquareCoords,
+  riverPath: SquareCoords[],
+) {
   const nearestRiver = riverPath.reduce(
     (best, curr) => {
       const dist =
@@ -114,14 +119,14 @@ function connectLakeToRiver(lakeCenter: HexCoords, riverPath: HexCoords[]) {
       if (best === null) return { coord: curr, dist };
       return dist < best.dist ? { coord: curr, dist } : best; // wybieramy najblizszy punkt rzeki
     },
-    null as { coord: HexCoords; dist: number } | null,
+    null as { coord: SquareCoords; dist: number } | null,
   );
 
   if (!nearestRiver) return; // brak rzeki do polaczenia
 
   let q = lakeCenter.q;
   let r = lakeCenter.r;
-  const target = nearestRiver.coord; // docelowy heks rzeki
+  const target = nearestRiver.coord; // docelowe pole rzeki
 
   while (q !== target.q || r !== target.r) {
     setTile(q, r, TerrainType.Water, false, 99); // wykop kanal w kierunku rzeki
@@ -151,7 +156,7 @@ function seedCluster(
     ]; // stos dla DFS
 
     while (frontier.length) {
-      const cur = frontier.pop()!; // pobierz nastepny heks
+      const cur = frontier.pop()!; // pobierz nastepne pole
       setTile(cur.q, cur.r, terrain, passable, movementCost); // ustaw teren klastra
       if (cur.depth >= maxRadius) continue; // osiagnelismy maksymalny zasieg
       for (const n of neighbors(cur.q, cur.r)) {
@@ -196,7 +201,7 @@ function addFords(count: number) {
   }
 }
 
-function carveWindingRoad(from: HexCoords, to: HexCoords, wiggle = 0.25) {
+function carveWindingRoad(from: SquareCoords, to: SquareCoords, wiggle = 0.25) {
   let q = from.q;
   let r = from.r;
   const clampQ = (v: number) => Math.max(0, Math.min(BOARD_WIDTH - 1, v)); // pilnowanie granic osi q
@@ -205,7 +210,7 @@ function carveWindingRoad(from: HexCoords, to: HexCoords, wiggle = 0.25) {
   const step = () => {
     const dq = Math.sign(to.q - q); // kierunek w osi q
     const dr = Math.sign(to.r - r); // kierunek w osi r
-    const options: HexCoords[] = [
+    const options: SquareCoords[] = [
       { q: q + dq, r },
       { q, r: r + dr },
     ]; // preferowany ruch w strone celu
@@ -232,7 +237,7 @@ function carveWindingRoad(from: HexCoords, to: HexCoords, wiggle = 0.25) {
   };
 
   while (q !== to.q || r !== to.r) {
-    const key = coordKey(q, r); // aktualny heks drogi
+    const key = coordKey(q, r); // aktualne pole drogi
     const tile = tileMap.get(key);
     if (tile && tile.terrain !== TerrainType.City) {
       if (tile.terrain === TerrainType.Water) {
@@ -274,7 +279,7 @@ seedCluster(TerrainType.Hill, 4, 3, true, 3, 0.55); // wyspy wzgorz
 seedCluster(TerrainType.Forest, 8, 5, true, 2, 0.62); // rozrzucone lasy
 addSwampsNearWater(0.3); // bagna przy wodzie
 
-const citySpots: HexCoords[] = [
+const citySpots: SquareCoords[] = [
   { q: Math.floor(BOARD_WIDTH / 2), r: Math.floor(BOARD_HEIGHT / 2) }, // centralne miasto
   { q: 5, r: 5 }, // polnocny zachod
   { q: BOARD_WIDTH - 6, r: 8 }, // polnocny wschod
@@ -299,11 +304,6 @@ carveWindingRoad(
   0.2,
 ); // droga na skraj mapy
 
-const tiles: HexTile[] = Array.from(tileMap.values()); // zbierz kafelki w tablice
+const tiles: SquareTile[] = Array.from(tileMap.values()); // zbierz kafelki w tablice
 
-export const DEFAULT_BOARD: GameBoard = {
-  tiles, // statyczna plansza
-  getHexTile() {
-    return tiles; // prosty accessor
-  },
-}; // eksport domyslnego ukladu
+export const DEFAULT_BOARD: GameBoard = new GameBoard(tiles); // eksport domyslnego ukladu

@@ -1,4 +1,4 @@
-import { HexCoords } from 'src/board/domain/hex.types'; // koordy heksowe
+import { SquareCoords } from 'src/board/domain/square.types'; // koordy planszy
 import { Unit, UnitName } from './unit.types'; // kontrakt jednostki
 
 export class GameUnit implements Unit {
@@ -14,7 +14,7 @@ export class GameUnit implements Unit {
     public speed: number, // szybkosc ruchu
     public cost: number, // koszt rekrutacji
     public uniqueId: number = getUniqueIdForNewInstance(), // unikalny egzemplarz
-    public position: HexCoords | null = null, // polozenie na mapie
+    public position: SquareCoords | null = null, // polozenie na mapie
     public playerId: number = 0, // wlasciciel
   ) {}
 }

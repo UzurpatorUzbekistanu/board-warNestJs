@@ -1,8 +1,8 @@
 import { BadRequestException, Injectable } from '@nestjs/common'; // nest DI i bledy 400
 import { DEFAULT_BOARD } from './data/board-definition'; // statyczna plansza
 import GameBoard from './domain/board'; // typ planszy
-import { HexCoords } from './domain/hex.types'; // koordy i kafle
-import { Road, roadByDijkstra } from './domain/hex.utils'; // algorytm sciezki
+import { SquareCoords } from './domain/square.types'; // koordy i kafle
+import { Road, roadByDijkstra } from './domain/square.utils'; // algorytm sciezki
 
 @Injectable()
 export class BoardService {
@@ -13,11 +13,12 @@ export class BoardService {
   }
 
   countDistanceBetweenTwoTilles(
-    fromCoords: HexCoords,
-    toCoords: HexCoords,
+    fromCoords: SquareCoords,
+    toCoords: SquareCoords,
   ): Road {
     const board = this.getDefaultBoard(); // pobierz plansze
-    const same = (a: HexCoords, b: HexCoords) => a.q === b.q && a.r === b.r; // helper porownujacy koordy
+    const same = (a: SquareCoords, b: SquareCoords) =>
+      a.q === b.q && a.r === b.r; // helper porownujacy koordy
 
     const from = board.tiles.find((t) => same(t.coords, fromCoords)); // startowy kafelek
     const to = board.tiles.find((t) => same(t.coords, toCoords)); // docelowy kafelek

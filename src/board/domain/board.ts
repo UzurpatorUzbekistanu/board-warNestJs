@@ -1,13 +1,13 @@
-import { HexTile } from './hex.types'; // definicja pojedynczego kafelka
+import { SquareTile } from './square.types'; // definicja pojedynczego kafelka
 
 export interface Board {
-  tiles: HexTile[]; // kolekcja kafelkow planszy
+  tiles: SquareTile[]; // kolekcja kafelkow planszy
 }
 
 export default class GameBoard implements Board {
-  constructor(public tiles: HexTile[]) {} // inicjalizacja planszy gotowym zbiorem heksow
+  constructor(public tiles: SquareTile[]) {} // inicjalizacja planszy
 
-  getHexTile(): HexTile[] {
+  getTiles(): SquareTile[] {
     return this.tiles; // zwroc cala plansze
   }
 }

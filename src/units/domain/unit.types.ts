@@ -1,4 +1,4 @@
-import { HexCoords } from 'src/board/domain/hex.types'; // koordy na planszy
+import { SquareCoords } from 'src/board/domain/square.types'; // koordy na planszy
 
 export interface Unit {
   name: string; // nazwa czytelna
@@ -11,7 +11,7 @@ export interface Unit {
   speed: number; // ile pol ruchu
   cost: number; // koszt rekrutacji
   uniqueId: number; // unikalny id egzemplarza
-  position: HexCoords | null; // polozenie na planszy
+  position: SquareCoords | null; // polozenie na planszy
   playerId: number; // wlasciciel
 }
 

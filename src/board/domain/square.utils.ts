@@ -1,51 +1,46 @@
 import { Board } from './board'; // reprezentacja planszy z kafelkami
-import { HexCoords, HexTile } from './hex.types'; // typy pomocnicze dla heksow
+import { SquareCoords, SquareTile } from './square.types'; // typy pomocnicze dla planszy kwadratowej
 
-export function countMovement(
-  positionHexCoords: HexCoords,
-  targetHexCoords: HexCoords,
-) {
-  const distanceQ = positionHexCoords.q - targetHexCoords.q; // roznica w osi q
-  const distanceR = positionHexCoords.r - targetHexCoords.r; // roznica w osi r
-  const distanceS =
-    -(positionHexCoords.q + positionHexCoords.r) +
-    (targetHexCoords.q + targetHexCoords.r); // os s wynikajaca z axial
-  return (Math.abs(distanceQ) + Math.abs(distanceR) + Math.abs(distanceS)) / 2; // dystans heksowy (cube coords)
+export function countMovement(from: SquareCoords, to: SquareCoords) {
+  const distanceQ = Math.abs(from.q - to.q); // roznica w osi poziomej
+  const distanceR = Math.abs(from.r - to.r); // roznica w osi pionowej
+  return distanceQ + distanceR; // dystans manhattan na siatce kwadratowej
 }
 
 export type Road = {
   movementCost: number; // suma kosztow ruchu
-  road: HexTile[]; // kolejne kafelki trasy
+  road: SquareTile[]; // kolejne kafelki trasy
 };
 export type TileWithCostReach = {
-  tile: HexTile; // kafelek
+  tile: SquareTile; // kafelek
   cost: number; // koszt dojscia do kafelka
   visited: boolean; // czy juz przetworzony
 };
 export function roadByDijkstra(
-  positionHexTile: HexTile,
-  targetHexTile: HexTile,
+  positionTile: SquareTile,
+  targetTile: SquareTile,
   board: Board,
 ): Road | undefined {
-  const tilesToCheck: TileWithCostReach[] = []; // kolejka priorytetowa (ręczna)
-  const closed: HexTile[] = []; // zamkniete wezly
-  const cameFrom: { tile: HexTile; prev: HexTile | null }[] = []; // poprzednik dla rekonstrukcji sciezki
+  const tilesToCheck: TileWithCostReach[] = []; // kolejka priorytetowa (reczna)
+  const closed: SquareTile[] = []; // zamkniete wezly
+  const cameFrom: { tile: SquareTile; prev: SquareTile | null }[] = []; // poprzednik dla rekonstrukcji sciezki
 
   const startTile: TileWithCostReach = {
-    tile: positionHexTile,
+    tile: positionTile,
     cost: 0,
     visited: false,
   }; // start z kosztem 0
 
   tilesToCheck.push(startTile); // wrzuc start na liste otwartych
-  cameFrom.push({ tile: positionHexTile, prev: null }); // brak poprzednika na starcie
+  cameFrom.push({ tile: positionTile, prev: null }); // brak poprzednika na starcie
 
-  const same = (a: HexTile, b: HexTile) =>
+  const same = (a: SquareTile, b: SquareTile) =>
     a.coords.q === b.coords.q && a.coords.r === b.coords.r; // pomocnicze porownanie koordow
 
-  const inList = (arr: HexTile[], t: HexTile) => arr.some((x) => same(x, t)); // sprawdz czy element jest na liscie
+  const inList = (arr: SquareTile[], t: SquareTile) =>
+    arr.some((x) => same(x, t)); // sprawdz czy element jest na liscie
 
-  const getPrevEntry = (t: HexTile) => cameFrom.find((e) => same(e.tile, t)); // znajdz wejscie poprzednika
+  const getPrevEntry = (t: SquareTile) => cameFrom.find((e) => same(e.tile, t)); // znajdz wejscie poprzednika
 
   while (tilesToCheck.length !== 0) {
     let currentIndex = 0; // indeks kafla o najnizszym koszcie
@@ -59,9 +54,9 @@ export function roadByDijkstra(
     current.visited = true; // oznacz jako odwiedzony
     closed.push(current.tile); // przenies do zamknietych
 
-    if (same(current.tile, targetHexTile)) {
-      const path: HexTile[] = []; // przechowywana sciezka wynikowa
-      let cur: HexTile | null = current.tile;
+    if (same(current.tile, targetTile)) {
+      const path: SquareTile[] = []; // przechowywana sciezka wynikowa
+      let cur: SquareTile | null = current.tile;
       while (cur) {
         path.push(cur); // dodaj kafelek do sciezki
         const entry = getPrevEntry(cur); // znajdz poprzednika
@@ -70,7 +65,7 @@ export function roadByDijkstra(
       return { movementCost: current.cost, road: path.reverse() }; // zwroc koszt i odwrocona sciezke
     }
 
-    const neighbors: HexTile[] = getNeighbors(current.tile, board); // pobierz sasiednie przechodnie pola
+    const neighbors: SquareTile[] = getNeighbors(current.tile, board); // pobierz sasiednie przechodnie pola
 
     for (const n of neighbors) {
       if (inList(closed, n)) continue; // pomijamy juz zamkniete
@@ -92,7 +87,7 @@ export function roadByDijkstra(
   return undefined; // brak sciezki
 }
 
-function getNeighbors(tile: HexTile, board: Board): HexTile[] {
+function getNeighbors(tile: SquareTile, board: Board): SquareTile[] {
   const dirs = [
     { q: 1, r: 0 },
     { q: -1, r: 0 },
@@ -108,5 +103,5 @@ function getNeighbors(tile: HexTile, board: Board): HexTile[] {
             t.coords.r === tile.coords.r + r,
         ), // znajdz kafelki w sasiedztwie
     )
-    .filter((t): t is HexTile => !!t && t.passable); // zwroc tylko istniejace i przechodnie
+    .filter((t): t is SquareTile => !!t && t.passable); // zwroc tylko istniejace i przechodnie
 }
